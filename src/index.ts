@@ -1,11 +1,11 @@
 import { Stream } from 'xstream'
 import { run, Drivers, FantasyObservable } from '@cycle/run'
 
-import { makeTranspositionDOMDriver, TranspositionDOMSource, VNode } from './dom'
+import { makeDOMDriver, DOMSource, VNode } from './dom'
 import { App } from './app'
 
 export interface Sources {
-  DOM: TranspositionDOMSource,
+  DOM: DOMSource,
 }
 
 export interface Sinks {
@@ -15,7 +15,7 @@ export interface Sinks {
 
 
 const drivers: Drivers<Sources, Sinks> = {
-  DOM: makeTranspositionDOMDriver('#app'),
+  DOM: makeDOMDriver('#app'),
 }
 
 function main(sources: Sources): Sinks {

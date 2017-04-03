@@ -8,23 +8,18 @@ export function App(sources: Sources): Sinks {
   const visibilityClick$ = sources.DOM.selectEvents('.visibility', 'click')
 
   const count$ = incClick$
-    .mapTo(1)
-    .fold((acc, x) => acc + x, 0)
+    .fold(count => count + 1, 0)
+    .map(String)
 
   const visible$ = visibilityClick$
     .fold(state => !state, false)
 
-  const state = {
-    showed: true,
-    count: 0,
-  }
-
   const vtree = div('', {}, [
-    button('.visibility', {}, state.showed ? 'hide' : 'show'),
+    button('.visibility', {}, visible$.map(state => state ? 'hide' : 'show')),
     div('', { visible$ }, [
-      button('.inc', {}, ['+']),
+      button('.inc', {}, '+'),
       `Clicked times: `,
-      String(state.count),
+      count$,
     ]),
   ])
 

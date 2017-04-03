@@ -14,7 +14,7 @@ export interface VNode {
   visible$?: Stream<boolean>,
 }
 
-export type Children = string | VNode | Array<string | VNode>
+export type Children = string | VNode | Stream<string> | Array<string | VNode | Stream<string>>
 
 export interface VNodeProps {
   visible$?: Stream<boolean>,
@@ -38,27 +38,13 @@ export function button(selector: string, props: VNodeProps, children: Children):
   }
 }
 
-function arrify(children: Children): Array<string | VNode> {
+function arrify(children: Children): Array<string | VNode | Stream<string>> {
   return Array.isArray(children) ? children : [children]
 }
 
 function error(err: Error) {
-  console.log(err)
+  console.error(err)
 }
-
-// function stringifyTree(tree: string | VNode): string {
-//   if (typeof tree === 'string') {
-//     return tree
-//   }
-
-//   const children = tree.children
-//     ? arrify(tree.children)
-//       .map(stringifyTree)
-//       .join('')
-//     : ''
-
-//   return `<${tree.type}${tree.selector.startsWith('.') ? ` class="${tree.selector.slice(1)}"` : ''}>${children}</${tree.type}>`
-// }
 
 function createDOM(root: Element, tree: string | VNode): void {
   if (typeof tree === 'string') {
@@ -70,6 +56,22 @@ function createDOM(root: Element, tree: string | VNode): void {
 
   children
     .forEach(child => {
+      if (child instanceof Stream) {
+        const node = children.length > 1
+          ? document.createElement('span')
+          : root
+        if (children.length > 1) {
+          root.appendChild(node)
+        }
+        child.addListener({
+          next: str => {
+            node.innerHTML = str
+          },
+          error,
+        })
+        return
+      }
+
       if (typeof child === 'string') {
         if (children.length === 1) {
           root.innerHTML = child
@@ -123,7 +125,7 @@ function createDOM(root: Element, tree: string | VNode): void {
     })
 }
 
-export class TranspositionDOMSource {
+export class DOMSource {
   private root: Element
   private namespace: string[]
 
@@ -138,13 +140,13 @@ export class TranspositionDOMSource {
   }
 }
 
-export function makeTranspositionDOMDriver(selector: string) {
+export function makeDOMDriver(selector: string) {
   const root = document.querySelector(selector)
   if (!root) {
-    throw new Error(`makeTranspositionDOMDriver(...): Cannot find element with selector \`${selector}\``)
+    throw new Error(`makeDOMDriver(...): Cannot find element with selector \`${selector}\``)
   }
 
-  return function transpositionDOMDriver(tree$: Stream<VNode>) {
+  return function domDriver(tree$: Stream<VNode>) {
     console.log('dom driver')
     tree$.take(1).addListener({
       next: tree => {
@@ -154,6 +156,6 @@ export function makeTranspositionDOMDriver(selector: string) {
       error: err => console.log(err),
     })
 
-    return new TranspositionDOMSource(root)
+    return new DOMSource(root)
   }
 }
