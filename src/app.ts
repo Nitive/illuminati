@@ -1,6 +1,6 @@
 import xs from 'xstream'
 
-import { div, button } from './dom'
+import { h } from './dom'
 import { Sources, Sinks } from './index'
 
 export function App(sources: Sources): Sinks {
@@ -14,10 +14,10 @@ export function App(sources: Sources): Sinks {
   const visible$ = visibilityClick$
     .fold(state => !state, false)
 
-  const vtree = div('', {}, [
-    button('.visibility', {}, visible$.map(state => state ? 'hide' : 'show')),
-    div('', { visible$ }, [
-      button('.inc', {}, '+'),
+  const vtree = h('div', {}, [
+    h('button.visibility', {}, visible$.map(state => state ? 'hide' : 'show')),
+    h('div', { visible$ }, [
+      h('button.inc', {}, '+'),
       `Clicked times: `,
       count$,
     ]),

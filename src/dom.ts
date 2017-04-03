@@ -4,11 +4,11 @@ import dropRepeats from 'xstream/extra/dropRepeats'
 
 (window as any).xs = xs
 
-export type ElementType = 'div' | 'button'
+export type ElementType = string
 
 export interface VNode {
   type: ElementType,
-  selector: string,
+  className?: string,
   children: Children,
   node?: Element,
   visible$?: Stream<boolean>,
@@ -20,19 +20,11 @@ export interface VNodeProps {
   visible$?: Stream<boolean>,
 }
 
-export function div(selector: string, props: VNodeProps, children: Children): VNode {
+export function h(selector: string, props: VNodeProps, children: Children): VNode {
+  const [ type, className ] = selector.split('.')
   return {
-    type: 'div' as 'div',
-    selector,
-    children,
-    visible$: props.visible$,
-  }
-}
-
-export function button(selector: string, props: VNodeProps, children: Children): VNode {
-  return {
-    type: 'button' as 'button',
-    selector,
+    type,
+    className,
     children,
     visible$: props.visible$,
   }
@@ -86,8 +78,8 @@ function createDOM(root: Element, tree: string | VNode): void {
 
       const createNode = (vnode: VNode) => {
         const node = document.createElement(vnode.type)
-        if (vnode.selector.startsWith('.')) {
-          node.className = vnode.selector.slice(1)
+        if (vnode.className) {
+          node.className = vnode.className
         }
         createDOM(node, vnode)
         return node
