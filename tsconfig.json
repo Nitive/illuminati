@@ -1,6 +1,8 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "jsx": "react",
+    "jsxFactory": "h",
     "lib": [
       "dom",
       "es5",

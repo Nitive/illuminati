@@ -1,36 +1,21 @@
 import xs, { Stream } from 'xstream'
 import fromEvent from 'xstream/extra/fromEvent'
 import dropRepeats from 'xstream/extra/dropRepeats'
+import * as _ from 'lodash'
 
 (window as any).xs = xs
 
-export type ElementType = string
-
-export interface VNode {
-  type: ElementType,
-  className?: string,
-  children: Children,
-  node?: Element,
-  visible$?: Stream<boolean>,
-}
-
-export type Children = string | VNode | Stream<string> | Array<string | VNode | Stream<string>>
-
-export interface VNodeProps {
-  visible$?: Stream<boolean>,
-}
-
-export function h(selector: string, props: VNodeProps, children: Children): VNode {
-  const [ type, className ] = selector.split('.')
+export function h(type: string, props: JSX.ElementProps, ...children: JSX.Children[]): JSX.Element {
+  console.log(arguments)
   return {
     type,
-    className,
-    children,
-    visible$: props.visible$,
+    className: props && props.class,
+    children: _.flatten(children),
+    visible$: props && props.visible$,
   }
 }
 
-function arrify(children: Children): Array<string | VNode | Stream<string>> {
+function arrify(children: JSX.Children): Array<string | JSX.Element | Stream<string>> {
   return Array.isArray(children) ? children : [children]
 }
 
@@ -38,7 +23,7 @@ function error(err: Error) {
   console.error(err)
 }
 
-function createDOM(root: Element, tree: string | VNode): void {
+function createDOM(root: Element, tree: string | JSX.Element): void {
   if (typeof tree === 'string') {
     root.innerHTML = tree
     return
@@ -76,7 +61,7 @@ function createDOM(root: Element, tree: string | VNode): void {
         return
       }
 
-      const createNode = (vnode: VNode) => {
+      const createNode = (vnode: JSX.Element) => {
         const node = document.createElement(vnode.type)
         if (vnode.className) {
           node.className = vnode.className
@@ -138,7 +123,7 @@ export function makeDOMDriver(selector: string) {
     throw new Error(`makeDOMDriver(...): Cannot find element with selector \`${selector}\``)
   }
 
-  return function domDriver(tree$: Stream<VNode>) {
+  return function domDriver(tree$: Stream<JSX.Element>) {
     console.log('dom driver')
     tree$.take(1).addListener({
       next: tree => {

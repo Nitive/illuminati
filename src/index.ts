@@ -1,7 +1,7 @@
 import { Stream } from 'xstream'
 import { run, Drivers, FantasyObservable } from '@cycle/run'
 
-import { makeDOMDriver, DOMSource, VNode } from './dom'
+import { makeDOMDriver, DOMSource } from './dom'
 import { App } from './app'
 
 export interface Sources {
@@ -9,7 +9,7 @@ export interface Sources {
 }
 
 export interface Sinks {
-  DOM: Stream<VNode>,
+  DOM: Stream<JSX.Element>,
   [key: string]: FantasyObservable,
 }
 

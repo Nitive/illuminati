@@ -11,11 +11,11 @@ module.exports = {
     filename: '[name].js',
   },
   resolve: {
-    extensions: ['.ts', '.js'],
+    extensions: ['.tsx', '.ts', '.js'],
   },
   module: {
     loaders: [{
-      test: /\.ts$/,
+      test: /\.tsx?$/,
       loader: 'ts-loader',
       query: {
         transpileOnly: true,

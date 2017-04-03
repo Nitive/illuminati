@@ -14,14 +14,17 @@ export function App(sources: Sources): Sinks {
   const visible$ = visibilityClick$
     .fold(state => !state, false)
 
-  const vtree = h('div', {}, [
-    h('button.visibility', {}, visible$.map(state => state ? 'hide' : 'show')),
-    h('div', { visible$ }, [
-      h('button.inc', {}, '+'),
-      `Clicked times: `,
-      count$,
-    ]),
-  ])
+  const vtree = (
+    <div>
+      <button class='visibility'>
+        {visible$.map(state => state ? 'hide' : 'show')}
+      </button>
+      <div visible$={visible$}>
+        <button class='inc'>+</button>
+        Clicked times: {count$}
+      </div>
+    </div>
+  )
 
   return {
     DOM: xs.of(vtree),
