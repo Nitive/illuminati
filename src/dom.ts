@@ -6,7 +6,6 @@ import * as _ from 'lodash'
 (window as any).xs = xs
 
 export function h(type: string, props: JSX.ElementProps, ...children: JSX.Children[]): JSX.Element {
-  console.log(arguments)
   return {
     type,
     className: props && props.class,
@@ -124,13 +123,12 @@ export function makeDOMDriver(selector: string) {
   }
 
   return function domDriver(tree$: Stream<JSX.Element>) {
-    console.log('dom driver')
     tree$.take(1).addListener({
       next: tree => {
         root.innerHTML = ''
         createDOM(root, tree)
       },
-      error: err => console.log(err),
+      error,
     })
 
     return new DOMSource(root)
