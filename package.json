@@ -1,5 +1,5 @@
 {
-  "name": "calculator",
+  "name": "cycle-best-pref-driver",
   "version": "0.1.0",
   "description": "",
   "main": "index.js",
@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Nitive/calculator.git"
+    "url": "git+https://github.com/Nitive/cycle-best-pref-driver.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Nitive/calculator/issues"
+    "url": "https://github.com/Nitive/cycle-best-pref-driver/issues"
   },
-  "homepage": "https://github.com/Nitive/calculator#readme",
+  "homepage": "https://github.com/Nitive/cycle-best-pref-driver#readme",
   "devDependencies": {
     "@cycle/dom": "^16.0.0",
     "@cycle/run": "^3.0.0",
