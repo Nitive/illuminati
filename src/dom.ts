@@ -85,7 +85,11 @@ function createNode(parent: Element, vnode: JSX.Child): Element | Text {
   })
 
   const setClass = (state: string) => {
-    node.setAttribute('class', state)
+    if (state) {
+      node.setAttribute('class', state)
+    } else {
+      node.removeAttribute('class')
+    }
   }
 
   mount({
