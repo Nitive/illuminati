@@ -3,6 +3,11 @@ import xs from 'xstream'
 import { h } from './dom'
 import { Sources, Sinks } from './index'
 
+type Falsy = false | 0 | '' | null | undefined
+function joinClasses(...classes: Array<string | Falsy>) {
+  return classes.filter(Boolean).join(' ')
+}
+
 export function App(sources: Sources): Sinks {
   const incClick$ = sources.DOM.selectEvents('.inc', 'click')
   const visibilityClick$ = sources.DOM.selectEvents('.visibility', 'click')
@@ -15,6 +20,8 @@ export function App(sources: Sources): Sinks {
     .fold(state => !state, true)
 
   const buttonText$ = visible$.map(state => state ? 'hide' : 'show')
+  const highlighted$ = xs.periodic(1000).fold(highlighted => !highlighted, true)
+  const buttonClass$ = highlighted$.map(highlighted => joinClasses('inc', highlighted && 'highlighted'))
 
   const vtree = (
     <div>
@@ -22,7 +29,7 @@ export function App(sources: Sources): Sinks {
         {/*{buttonText$}*/}
       </button>
       <div if$={visible$}>
-        <button class='inc'>+</button>
+        <button class$={buttonClass$}>+</button>
         {/*Clicked times: {count$}*/}
       </div>
     </div>

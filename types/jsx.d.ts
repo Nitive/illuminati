@@ -8,15 +8,11 @@ declare global {
 
     type Child = Element | TextElement // | Stream<TextElement>
 
-    interface StaticProps {
-      readonly class?: string,
+    interface ElementProps {
+      class?: string,
+      class$?: Stream<string>,
+      if$?: Stream<boolean>,
     }
-
-    interface DynamicProps {
-      readonly if$?: Stream<boolean>,
-    }
-
-    type ElementProps = StaticProps & DynamicProps
 
     interface TextElement {
       readonly type: TextElementType,

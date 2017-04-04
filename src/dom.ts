@@ -15,14 +15,10 @@ function createTextElement(text: string): JSX.TextElement {
 }
 
 export function h(type: JSX.ElementType, props?: JSX.ElementProps, ...children: Array<JSX.Element | string>): JSX.Element {
-  const properties = {
-    class: props && props.class,
-    if$: props && props.if$,
-  }
-
+  // TODO: check there is no prop and prop$ together
   return {
     type,
-    props: properties,
+    props: props || {},
     children: children.map(
       child => typeof child === 'string'
         ? createTextElement(child)
@@ -71,10 +67,6 @@ function createNode(parent: Element, vnode: JSX.Child): Element | Text {
   const node = document.createElement(vnode.type)
   const { props } = vnode
 
-  if (props.class) {
-    node.setAttribute('class', props.class)
-  }
-
   const exist$ = props.if$ || xs.of(true)
   mount({
     state$: exist$,
@@ -90,6 +82,16 @@ function createNode(parent: Element, vnode: JSX.Child): Element | Text {
         node.remove()
       }
     },
+  })
+
+  const setClass = (state: string) => {
+    node.setAttribute('class', state)
+  }
+
+  mount({
+    state$: props.class$ || (props.class ? xs.of(props.class) : xs.empty()),
+    firstMount: setClass,
+    nextMounts: setClass,
   })
 
   vnode.children.forEach(child => {
