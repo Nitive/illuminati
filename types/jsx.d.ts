@@ -3,25 +3,36 @@ type DOMElement = Element;
 
 declare global {
   namespace JSX {
-    type ElementType = string
-    type Children = string | Element | Stream<string> | Array<string | Element | Stream<string>>
+    type TextElementType = '_text'
+    type ElementType = 'div' | 'button'
 
-    interface ElementProps {
-      class?: string,
-      visible$?: Stream<boolean>,
+    type Child = Element | TextElement // | Stream<TextElement>
+
+    interface StaticProps {
+      readonly class?: string,
+    }
+
+    interface DynamicProps {
+      readonly if$?: Stream<boolean>,
+    }
+
+    type ElementProps = StaticProps & DynamicProps
+
+    interface TextElement {
+      readonly type: TextElementType,
+      readonly text: string,
     }
 
     interface Element {
-      type: ElementType,
-      className?: string,
-      children: Children,
-      node?: DOMElement,
-      visible$?: Stream<boolean>,
+      readonly type: ElementType,
+      readonly staticProps: StaticProps,
+      readonly dynamicProps: DynamicProps,
+      readonly children: Child[],
     }
 
     interface IntrinsicElements {
-      div: any,
-      button: any,
+      div: ElementProps,
+      button: ElementProps;
     }
   }
 }

@@ -21,7 +21,7 @@ export function App(sources: Sources): Sinks {
       <button class='visibility'>
         {buttonText$}
       </button>
-      <div visible$={visible$}>
+      <div if$={visible$}>
         <button class='inc'>+</button>
         Clicked times: {count$}
       </div>
