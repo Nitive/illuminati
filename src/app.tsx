@@ -12,7 +12,7 @@ export function App(sources: Sources): Sinks {
     .map(String)
 
   const visible$ = visibilityClick$
-    .fold(state => !state, false)
+    .fold(state => !state, true)
 
   const vtree = (
     <div>

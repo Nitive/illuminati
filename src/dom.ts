@@ -78,7 +78,7 @@ function createDOM(root: Element, tree: string | JSX.Element): void {
           next: state => {
             // node does not exits here
             if (state) {
-              root.appendChild(createNode(child))
+              child.node = root.appendChild(createNode(child))
             }
           },
           error,
