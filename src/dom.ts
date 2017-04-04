@@ -66,7 +66,7 @@ function mount<S>({ state$, firstMount, nextMounts }: MountArgs<S>) {
     })
 }
 
-function createNode(root: Element, vnode: JSX.Child): Element | Text {
+function createNode(parent: Element, vnode: JSX.Child): Element | Text {
   if (vnode.type === JSXText) {
     const node = document.createTextNode(vnode.text)
     return node
@@ -84,12 +84,12 @@ function createNode(root: Element, vnode: JSX.Child): Element | Text {
     state$: exist$,
     firstMount(state) {
       if (state) {
-        root.appendChild(node)
+        parent.appendChild(node)
       }
     },
     nextMounts(state) {
       if (state) {
-        root.appendChild(node)
+        parent.appendChild(node)
       } else {
         node.remove()
       }
