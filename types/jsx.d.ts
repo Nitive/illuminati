@@ -6,7 +6,7 @@ declare global {
     type TextElementType = '_text'
     type ElementType = 'div' | 'button'
 
-    type Child = Element | TextElement // | Stream<TextElement>
+    type Child = Element | TextElement | Stream<TextElement>
 
     interface ElementProps {
       class?: string,

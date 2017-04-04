@@ -1,9 +1,6 @@
 import xs, { Stream } from 'xstream'
 import fromEvent from 'xstream/extra/fromEvent'
 import dropRepeats from 'xstream/extra/dropRepeats'
-// import * as _ from 'lodash'
-
-(window as any).xs = xs
 
 const JSXText: JSX.TextElementType = '_text'
 
@@ -14,16 +11,26 @@ function createTextElement(text: string): JSX.TextElement {
   }
 }
 
-export function h(type: JSX.ElementType, props?: JSX.ElementProps, ...children: Array<JSX.Element | string>): JSX.Element {
+type Child = JSX.Element | string | Stream<string>
+
+function createChild(child: Child): JSX.Element | JSX.TextElement | Stream<JSX.TextElement> {
+  if (typeof child === 'string') {
+    return createTextElement(child)
+  }
+
+  if (child instanceof Stream) {
+    return child.map(createTextElement)
+  }
+
+  return child
+}
+
+export function h(type: JSX.ElementType, props?: JSX.ElementProps, ...children: Array<Child>): JSX.Element {
   // TODO: check there is no prop and prop$ together
   return {
     type,
     props: props || {},
-    children: children.map(
-      child => typeof child === 'string'
-        ? createTextElement(child)
-        : child,
-    ),
+    children: children.map(createChild),
   }
 }
 
@@ -59,6 +66,18 @@ function mount<S>({ state$, firstMount, nextMounts }: MountArgs<S>) {
 }
 
 function createNode(parent: Element, vnode: JSX.Child): Element | Text {
+  if (vnode instanceof Stream) {
+    const node = document.createTextNode('')
+    vnode
+      .addListener({
+        next: element => {
+          node.textContent = element.text
+        },
+        error,
+      })
+    return node
+  }
+
   if (vnode.type === JSXText) {
     const node = document.createTextNode(vnode.text)
     return node
@@ -67,9 +86,8 @@ function createNode(parent: Element, vnode: JSX.Child): Element | Text {
   const node = document.createElement(vnode.type)
   const { props } = vnode
 
-  const exist$ = props.if$ || xs.of(true)
   mount({
-    state$: exist$,
+    state$: props.if$ || xs.of(true),
     firstMount(state) {
       if (state) {
         parent.appendChild(node)
@@ -103,104 +121,11 @@ function createNode(parent: Element, vnode: JSX.Child): Element | Text {
     node.appendChild(childNode)
   })
   return node
-
-
-  // if (element instanceof Stream) {
-  //   mount({
-  //     state$: element,
-  //     firstMount(state) {
-  //       element.
-  //     },
-  //     nextMounts(state) {
-
-  //     },
-  //   })
-  // }
-
-  // const children = arrify(tree.children)
-
-  // children
-  //   .forEach(child => {
-  //     if (child instanceof Stream) {
-  //       const node = children.length > 1
-  //         ? document.createElement('span')
-  //         : root
-  //       if (children.length > 1) {
-  //         root.appendChild(node)
-  //       }
-  //       child.addListener({
-  //         next: str => {
-  //           node.innerHTML = str
-  //         },
-  //         error,
-  //       })
-  //       return
-  //     }
-
-  //     if (typeof child === 'string') {
-  //       if (children.length === 1) {
-  //         root.innerHTML = child
-  //         return
-  //       }
-
-  //       const node = document.createElement('span')
-  //       node.innerHTML = child
-  //       root.appendChild(node)
-  //       return
-  //     }
-
-  //     const createNode = (vnode: JSX.Element) => {
-  //       const node = document.createElement(vnode.type)
-  //       if (vnode.className) {
-  //         node.className = vnode.className
-  //       }
-  //       createDOM(node, vnode)
-  //       return node
-  //     }
-
-  //     const visible$ = child.visible$ || xs.of(true)
-
-
-  //     visible$
-  //       .take(1)
-  //       .addListener({
-  //         next: state => {
-  //           // node does not exits here
-  //           if (state) {
-  //             child.node = root.appendChild(createNode(child))
-  //           }
-  //         },
-  //         error,
-  //       })
-
-  //     visible$
-  //       .compose(dropRepeats())
-  //       .drop(1)
-  //       .addListener({
-  //         next: state => {
-  //           // last state was equal !state
-  //           if (state) {
-  //             child.node = root.appendChild(createNode(child))
-  //           } else {
-  //             child.node!.remove()
-  //           }
-  //         },
-  //         error,
-  //       })
-  //   })
 }
 
 export class DOMSource {
-  private root: Element
-  private namespace: string[]
-
-  public constructor(root: Element, namespace: string[] = []) {
-    this.root = root
-    this.namespace = namespace
-  }
-
   public selectEvents(selector: string, eventName: string) {
-    return fromEvent(this.root, eventName)
+    return fromEvent(document.body, eventName)
       .filter(event => event.target.matches(selector))
   }
 }
@@ -214,13 +139,13 @@ export function makeDOMDriver(selector: string) {
   return function domDriver(tree$: Stream<JSX.Element>) {
     tree$.take(1).addListener({
       next: tree => {
-        // TODO: use root.replateWith(createNode(tree))
+        // TODO: use root.replaceWith(createNode(root, tree))
         root.innerHTML = ''
         createNode(root, tree)
       },
       error,
     })
 
-    return new DOMSource(root)
+    return new DOMSource()
   }
 }
