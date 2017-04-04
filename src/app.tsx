@@ -14,10 +14,12 @@ export function App(sources: Sources): Sinks {
   const visible$ = visibilityClick$
     .fold(state => !state, true)
 
+  const buttonText$ = visible$.map(state => state ? 'hide' : 'show')
+
   const vtree = (
     <div>
       <button class='visibility'>
-        {visible$.map(state => state ? 'hide' : 'show')}
+        {buttonText$}
       </button>
       <div visible$={visible$}>
         <button class='inc'>+</button>
