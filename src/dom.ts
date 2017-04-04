@@ -14,7 +14,7 @@ function createTextElement(text: string): JSX.TextElement {
   }
 }
 
-export function h(type: JSX.ElementType, props: JSX.ElementProps, ...children: Array<JSX.Element | string>): JSX.Element {
+export function h(type: JSX.ElementType, props?: JSX.ElementProps, ...children: Array<JSX.Element | string>): JSX.Element {
   const staticProps = {
     class: props && props.class,
   }
