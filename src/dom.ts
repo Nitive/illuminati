@@ -15,18 +15,14 @@ function createTextElement(text: string): JSX.TextElement {
 }
 
 export function h(type: JSX.ElementType, props?: JSX.ElementProps, ...children: Array<JSX.Element | string>): JSX.Element {
-  const staticProps = {
+  const properties = {
     class: props && props.class,
-  }
-
-  const dynamicProps = {
     if$: props && props.if$,
   }
 
   return {
     type,
-    staticProps,
-    dynamicProps,
+    props: properties,
     children: children.map(
       child => typeof child === 'string'
         ? createTextElement(child)
@@ -73,13 +69,13 @@ function createNode(parent: Element, vnode: JSX.Child): Element | Text {
   }
 
   const node = document.createElement(vnode.type)
-  const { staticProps, dynamicProps } = vnode
+  const { props } = vnode
 
-  if (staticProps.class) {
-    node.setAttribute('class', staticProps.class)
+  if (props.class) {
+    node.setAttribute('class', props.class)
   }
 
-  const exist$ = dynamicProps.if$ || xs.of(true)
+  const exist$ = props.if$ || xs.of(true)
   mount({
     state$: exist$,
     firstMount(state) {

@@ -25,8 +25,7 @@ declare global {
 
     interface Element {
       readonly type: ElementType,
-      readonly staticProps: StaticProps,
-      readonly dynamicProps: DynamicProps,
+      readonly props: ElementProps,
       readonly children: Child[],
     }
 
