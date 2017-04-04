@@ -1,6 +1,6 @@
 import xs, { Stream } from 'xstream'
 import fromEvent from 'xstream/extra/fromEvent'
-// import dropRepeats from 'xstream/extra/dropRepeats'
+import dropRepeats from 'xstream/extra/dropRepeats'
 // import * as _ from 'lodash'
 
 (window as any).xs = xs
@@ -39,43 +39,65 @@ function error(err: Error) {
   console.error(err)
 }
 
-// type Update<S> = (state: S) => void
-// interface MountArgs<S> {
-//   state$: Stream<S>,
-//   firstMount: Update<S>,
-//   nextMounts: Update<S>,
-// }
-// function mount<S>({ state$, firstMount, nextMounts }: MountArgs<S>) {
-//   state$
-//     .take(1)
-//     .addListener({
-//       next: state => {
-//         firstMount(state)
-//       },
-//       error,
-//     })
+type Update<S> = (state: S) => void
+interface MountArgs<S> {
+  state$: Stream<S>,
+  firstMount: Update<S>,
+  nextMounts: Update<S>,
+}
+function mount<S>({ state$, firstMount, nextMounts }: MountArgs<S>) {
+  state$
+    .take(1)
+    .addListener({
+      next: state => {
+        firstMount(state)
+      },
+      error,
+    })
 
-//   state$
-//     .compose(dropRepeats())
-//     .drop(1)
-//     .addListener({
-//       next: state => {
-//         nextMounts(state)
-//       },
-//       error,
-//     })
-// }
+  state$
+    .compose(dropRepeats())
+    .drop(1)
+    .addListener({
+      next: state => {
+        nextMounts(state)
+      },
+      error,
+    })
+}
 
-function createNode(vnode: JSX.Child): Element | Text {
+function createNode(root: Element, vnode: JSX.Child): Element | Text {
   if (vnode.type === JSXText) {
     const node = document.createTextNode(vnode.text)
     return node
   }
 
   const node = document.createElement(vnode.type)
+  const { staticProps, dynamicProps } = vnode
+
+  if (staticProps.class) {
+    node.setAttribute('class', staticProps.class)
+  }
+
+  const exist$ = dynamicProps.if$ || xs.of(true)
+  mount({
+    state$: exist$,
+    firstMount(state) {
+      if (state) {
+        root.appendChild(node)
+      }
+    },
+    nextMounts(state) {
+      if (state) {
+        root.appendChild(node)
+      } else {
+        node.remove()
+      }
+    },
+  })
 
   vnode.children.forEach(child => {
-    const childNode = createNode(child)
+    const childNode = createNode(node, child)
     node.appendChild(childNode)
   })
   return node
@@ -192,7 +214,7 @@ export function makeDOMDriver(selector: string) {
       next: tree => {
         // TODO: use root.replateWith(createNode(tree))
         root.innerHTML = ''
-        root.appendChild(createNode(tree))
+        createNode(root, tree)
       },
       error,
     })

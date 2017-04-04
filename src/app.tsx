@@ -19,11 +19,11 @@ export function App(sources: Sources): Sinks {
   const vtree = (
     <div>
       <button class='visibility'>
-        {buttonText$}
+        {/*{buttonText$}*/}
       </button>
       <div if$={visible$}>
         <button class='inc'>+</button>
-        Clicked times: {count$}
+        {/*Clicked times: {count$}*/}
       </div>
     </div>
   )
