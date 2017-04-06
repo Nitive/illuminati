@@ -23,6 +23,14 @@ export function App(sources: Sources): Sinks {
   const highlighted$ = xs.periodic(1000).fold(highlighted => !highlighted, true)
   const buttonClass$ = highlighted$.map(highlighted => joinClasses('inc', highlighted && 'highlighted'))
 
+  const arrOfComponents = [
+    <div>div</div>,
+    'string',
+    <br />,
+    'stream: ',
+    count$,
+  ]
+
   const vtree = (
     <div>
       <button class='visibility'>
@@ -31,6 +39,7 @@ export function App(sources: Sources): Sinks {
       <div if$={visible$}>
         <button class$={buttonClass$}>+</button>
         Clicked times: {count$}
+        {arrOfComponents}
       </div>
     </div>
   )

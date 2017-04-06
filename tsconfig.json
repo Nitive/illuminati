@@ -29,6 +29,6 @@
     "types"
   ],
   "filesGlob": [
-    "./src/**/*.ts"
+    "./src/**/*.ts*"
   ]
 }

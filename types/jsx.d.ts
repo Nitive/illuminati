@@ -28,6 +28,7 @@ declare global {
     interface IntrinsicElements {
       div: ElementProps,
       button: ElementProps;
+      br: ElementProps;
     }
   }
 }

@@ -1,6 +1,7 @@
 import xs, { Stream } from 'xstream'
 import fromEvent from 'xstream/extra/fromEvent'
 import dropRepeats from 'xstream/extra/dropRepeats'
+import * as _ from 'lodash'
 
 const JSXText: JSX.TextElementType = '_text'
 
@@ -25,12 +26,12 @@ function createChild(child: Child): JSX.Element | JSX.TextElement | Stream<JSX.T
   return child
 }
 
-export function h(type: JSX.ElementType, props?: JSX.ElementProps, ...children: Array<Child>): JSX.Element {
+export function h(type: JSX.ElementType, props?: JSX.ElementProps, ...children: Array<Child | _.RecursiveArray<Child>>): JSX.Element {
   // TODO: check there is no prop and prop$ together
   return {
     type,
     props: props || {},
-    children: children.map(createChild),
+    children: _.flattenDeep(children).map(createChild),
   }
 }
 
