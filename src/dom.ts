@@ -9,29 +9,36 @@ function createTextElement(text: string): JSX.TextElement {
   return {
     type: JSXText,
     text,
+    key: text,
   }
 }
 
 type Child = JSX.Element | string | Stream<string>
 
-function createChild(child: Child): JSX.Element | JSX.TextElement | Stream<JSX.TextElement> {
+function createChild(child: Child): JSX.Element | JSX.TextElement | Stream<JSX.TextElement | Array<JSX.Element | JSX.TextElement>> {
   if (typeof child === 'string') {
     return createTextElement(child)
   }
 
   if (child instanceof Stream) {
-    return child.map(createTextElement)
+    return child.map(textOrArray => {
+      return Array.isArray(textOrArray)
+        ? textOrArray
+        : createTextElement(textOrArray)
+    })
   }
 
   return child
 }
 
-export function h(type: JSX.ElementType, props?: JSX.ElementProps, ...children: Array<Child | _.RecursiveArray<Child>>): JSX.Element {
+export function h(type: JSX.ElementType, _props?: JSX.ElementProps, ...children: Array<Child | _.RecursiveArray<Child>>): JSX.Element {
+  const props = _props || {}
   // TODO: check there is no prop and prop$ together
   return {
     type,
-    props: props || {},
+    props: props,
     children: _.flattenDeep(children).map(createChild),
+    key: props.key != null ? props.key : Math.random(),
   }
 }
 
@@ -72,23 +79,48 @@ const setAttribute = (attributeName: string) => (node: Element) => (state: strin
 const setClassForNode = setAttribute('class')
 
 
-function createNode(parent: Element, vnode: JSX.Child): void {
+function createNode(parent: Element, vnode: JSX.Child): () => Element | Text {
 
   // Stream<JSX.TextElement>
 
   if (vnode instanceof Stream) {
     let node: Text
+    let prevArr: Array<{ key: JSX.Key, node: Element | Text }>
     mount({
       state$: vnode,
       firstMount: element => {
+        if (Array.isArray(element)) {
+          prevArr = element.map(el => ({
+            key: el.key,
+            node: createNode(parent, el)(),
+          }))
+          return
+        }
+
         node = document.createTextNode(element.text)
         parent.appendChild(node)
       },
       nextMounts: element => {
+        if (Array.isArray(element)) {
+          prevArr
+            .filter(e => !element.map(el => el.key).includes(e.key))
+            .forEach(e => {
+              parent.removeChild(e.node)
+            })
+
+          prevArr = element.map(el => {
+            const exists = prevArr.find(e => e.key === el.key)
+            return exists
+              ? exists
+              : { key: el.key, node: createNode(parent, el)() }
+          })
+          return
+        }
+
         node.textContent = element.text
       },
     })
-    return
+    return () => node
   }
 
 
@@ -97,7 +129,7 @@ function createNode(parent: Element, vnode: JSX.Child): void {
   if (vnode.type === JSXText) {
     const node = document.createTextNode(vnode.text)
     parent.appendChild(node)
-    return
+    return () => node
   }
 
 
@@ -141,6 +173,8 @@ function createNode(parent: Element, vnode: JSX.Child): void {
       }
     },
   })
+
+  return () => node
 }
 
 export class DOMSource {

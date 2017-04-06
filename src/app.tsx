@@ -31,6 +31,11 @@ export function App(sources: Sources): Sinks {
     count$,
   ]
 
+  const streamOfArray$ = xs.periodic(1000)
+    .map(() => Math.random() * 15)
+    .map(Math.round)
+    .map(len => Array(len).fill(0).map((_, i) => <div key={i}>array element</div>))
+
   const vtree = (
     <div>
       <button class='visibility'>
@@ -41,6 +46,7 @@ export function App(sources: Sources): Sinks {
         Clicked times: {count$}
         {arrOfComponents}
       </div>
+      {streamOfArray$}
     </div>
   )
 
