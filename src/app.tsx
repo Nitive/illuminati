@@ -17,7 +17,7 @@ export function App(sources: Sources): Sinks {
     .map(String)
 
   const visible$ = visibilityClick$
-    .fold(state => !state, true)
+    .fold(state => !state, false)
 
   const buttonText$ = visible$.map(state => state ? 'hide' : 'show')
   const highlighted$ = xs.periodic(1000).fold(highlighted => !highlighted, true)
