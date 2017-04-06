@@ -49,9 +49,7 @@ function mount<S>({ state$, firstMount, nextMounts }: MountArgs<S>) {
   state$
     .take(1)
     .addListener({
-      next: state => {
-        firstMount(state)
-      },
+      next: firstMount,
       error,
     })
 
@@ -59,42 +57,58 @@ function mount<S>({ state$, firstMount, nextMounts }: MountArgs<S>) {
     .compose(dropRepeats())
     .drop(1)
     .addListener({
-      next: state => {
-        nextMounts(state)
-      },
+      next: nextMounts,
       error,
     })
 }
 
-function createNode(parent: Element, vnode: JSX.Child): Element | Text {
-  if (vnode instanceof Stream) {
-    const node = document.createTextNode('')
-    vnode
-      .addListener({
-        next: element => {
-          node.textContent = element.text
-        },
-        error,
-      })
-    return node
+const setAttribute = (attributeName: string) => (node: Element) => (state: string) => {
+  if (state) {
+    node.setAttribute(attributeName, state)
+  } else {
+    node.removeAttribute(attributeName)
   }
+}
+const setClassForNode = setAttribute('class')
+
+
+function createNode(parent: Element, vnode: JSX.Child): void {
+
+  // Stream<JSX.TextElement>
+
+  if (vnode instanceof Stream) {
+    let node: Text
+    mount({
+      state$: vnode,
+      firstMount: element => {
+        node = document.createTextNode(element.text)
+        parent.appendChild(node)
+      },
+      nextMounts: element => {
+        node.textContent = element.text
+      },
+    })
+    return
+  }
+
+
+  // JSX.TextElement
 
   if (vnode.type === JSXText) {
     const node = document.createTextNode(vnode.text)
-    return node
+    parent.appendChild(node)
+    return
   }
 
-  const node = document.createElement(vnode.type)
-  const { props } = vnode
 
-  function createElement() {
-    const setClass = (state: string) => {
-      if (state) {
-        node.setAttribute('class', state)
-      } else {
-        node.removeAttribute('class')
-      }
-    }
+  // JSX.Element
+
+  let node: Element
+  const { type, props, children } = vnode
+  function add() {
+    node = document.createElement(type)
+    parent.appendChild(node)
+    const setClass = setClassForNode(node)
 
     mount({
       state$: props.class$ || (props.class ? xs.of(props.class) : xs.empty()),
@@ -102,38 +116,31 @@ function createNode(parent: Element, vnode: JSX.Child): Element | Text {
       nextMounts: setClass,
     })
 
-    let children: Array<Element | Text>
-    if (!(vnode instanceof Stream) && vnode.type !== JSXText) {
-      children = vnode.children.map(child => {
-        const childNode = createNode(node, child)
-        node.appendChild(childNode)
-        return childNode
-      })
-    }
-    parent.appendChild(node)
-    return function remove() {
-      parent.removeChild(node)
-      children.forEach(child => child.remove())
-    }
+    children.forEach(child => {
+      createNode(node, child)
+    })
   }
 
-  let remove: Function
+  function remove() {
+    parent.removeChild(node)
+  }
+
   mount({
     state$: props.if$ || xs.of(true),
     firstMount(state) {
-      if (!state) { return }
-      remove = createElement()
+      if (state) {
+        add()
+      }
     },
 
     nextMounts(state) {
       if (state) {
-        remove = createElement()
+        add()
       } else {
         remove()
       }
     },
   })
-  return node
 }
 
 export class DOMSource {
