@@ -14,7 +14,6 @@ export function App(sources: Sources): Sinks {
 
   const count$ = incClick$
     .fold(count => count + 1, 0)
-    .map(String)
 
   const visible$ = visibilityClick$
     .fold(state => !state, false)
