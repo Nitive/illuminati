@@ -38,15 +38,19 @@ export function App(sources: Sources): Sinks {
 
   const vtree = (
     <div>
-      <button class='visibility' type='button'>
-        {buttonText$}
-      </button>
-      <div if$={visible$}>
-        <button class$={buttonClass$}>+</button>
-        Clicked times: {count$}
-        {arrOfComponents}
+      <div>
+        <button class='visibility' type='button'>
+          {buttonText$}
+        </button>
+        <div if$={visible$}>
+          <button class$={buttonClass$}>+</button>
+          Clicked times: {count$}
+          {arrOfComponents}
+        </div>
       </div>
-      {streamOfArray$}
+      <div>
+        {streamOfArray$}
+      </div>
     </div>
   )
 
