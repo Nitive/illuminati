@@ -38,7 +38,7 @@ export function App(sources: Sources): Sinks {
 
   const vtree = (
     <div>
-      <button class='visibility'>
+      <button class='visibility' type='button'>
         {buttonText$}
       </button>
       <div if$={visible$}>

@@ -36,7 +36,7 @@ export function h(type: JSX.ElementType, _props?: JSX.ElementProps, ...children:
   // TODO: check there is no prop and prop$ together
   return {
     type,
-    props: props,
+    props,
     children: _.flattenDeep(children).map(createChild),
     key: props.key != null ? props.key : Math.random(),
   }
@@ -76,7 +76,16 @@ const setAttribute = (attributeName: string) => (node: Element) => (state: strin
     node.removeAttribute(attributeName)
   }
 }
-const setClassForNode = setAttribute('class')
+
+function watchAttribute(plainAttr: JSX.PlainPropsKeys, streamAttr: JSX.StreamPropsKeys, node: Element, props: JSX.ElementProps) {
+  const setAttr = setAttribute(plainAttr)(node)
+
+  mount({
+    state$: props[streamAttr] || (props[plainAttr] ? xs.of(props[plainAttr]) : xs.empty()),
+    firstMount: setAttr,
+    nextMounts: setAttr,
+  })
+}
 
 
 function createNode(parent: Element, vnode: JSX.Child): () => Element | Text {
@@ -140,13 +149,9 @@ function createNode(parent: Element, vnode: JSX.Child): () => Element | Text {
   function add() {
     node = document.createElement(type)
     parent.appendChild(node)
-    const setClass = setClassForNode(node)
-
-    mount({
-      state$: props.class$ || (props.class ? xs.of(props.class) : xs.empty()),
-      firstMount: setClass,
-      nextMounts: setClass,
-    })
+    watchAttribute('class', 'class$', node, props)
+    watchAttribute('id', 'id$', node, props)
+    watchAttribute('type', 'type$', node, props)
 
     children.forEach(child => {
       createNode(node, child)

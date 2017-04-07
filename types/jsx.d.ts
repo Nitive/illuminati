@@ -8,12 +8,17 @@ declare global {
 
     type Child = Element | TextElement | Stream<TextElement | Array<Element | TextElement>>
 
-    interface ElementProps {
-      class?: string,
-      class$?: Stream<string>,
+    type PlainPropsKeys = 'class' | 'id' | 'type'
+    type PlainProps = Partial<Record<PlainPropsKeys, string>>
+    type StreamPropsKeys = 'class$' | 'id$' | 'type$'
+    type StreamProps = Partial<Record<StreamPropsKeys, Stream<string>>>
+
+    type SpecificProps = {
       if$?: Stream<boolean>,
       key?: Key;
     }
+
+    type ElementProps = PlainProps &  StreamProps & SpecificProps
 
     type Key = string | number;
 
