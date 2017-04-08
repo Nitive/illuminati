@@ -88,36 +88,37 @@ function watchAttribute(plainAttr: JSX.PlainPropsKeys, streamAttr: JSX.StreamPro
 }
 
 
-function createNode(parent: Element, vnode: JSX.Child): () => Element | Text {
+function createNode(parent: Element, jsxChild: JSX.Child): () => Element | Text {
 
   // Stream<JSX.TextElement>
 
-  if (vnode instanceof Stream) {
+  if (jsxChild instanceof Stream) {
+    const vnode$ = jsxChild
     let node: Text
     let prevArr: Array<{ key: JSX.Key, node: Element | Text }>
     mount({
-      state$: vnode,
-      firstMount: element => {
-        if (Array.isArray(element)) {
-          prevArr = element.map(el => ({
+      state$: vnode$,
+      firstMount: vnode => {
+        if (Array.isArray(vnode)) {
+          prevArr = vnode.map(el => ({
             key: el.key,
             node: createNode(parent, el)(),
           }))
           return
         }
 
-        node = document.createTextNode(element.text)
+        node = document.createTextNode(String(vnode.text))
         parent.appendChild(node)
       },
-      nextMounts: element => {
-        if (Array.isArray(element)) {
+      nextMounts: vnode => {
+        if (Array.isArray(vnode)) {
           prevArr
-            .filter(e => !element.map(el => el.key).includes(e.key))
+            .filter(e => !vnode.map(el => el.key).includes(e.key))
             .forEach(e => {
               parent.removeChild(e.node)
             })
 
-          prevArr = element.map(el => {
+          prevArr = vnode.map(el => {
             const exists = prevArr.find(e => e.key === el.key)
             return exists
               ? exists
@@ -126,17 +127,20 @@ function createNode(parent: Element, vnode: JSX.Child): () => Element | Text {
           return
         }
 
-        node.textContent = element.text
+        node.textContent = String(vnode.text)
       },
     })
     return () => node
   }
 
+  // VNodes
+
+  const vnode = jsxChild
 
   // JSX.TextElement
 
   if (vnode.type === JSXText) {
-    const node = document.createTextNode(vnode.text)
+    const node = document.createTextNode(String(vnode.text))
     parent.appendChild(node)
     return () => node
   }

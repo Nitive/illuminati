@@ -24,7 +24,7 @@ declare global {
 
     interface TextElement {
       readonly type: TextElementType,
-      readonly text: string,
+      readonly text: string | number,
       readonly key: Key;
     }
 
