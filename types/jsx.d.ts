@@ -39,6 +39,10 @@ declare global {
       div: ElementProps,
       button: ElementProps;
       br: ElementProps;
+      h1: ElementProps;
+      table: ElementProps;
+      tbody: ElementProps;
+      span: ElementProps;
     }
   }
 }
