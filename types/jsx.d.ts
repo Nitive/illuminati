@@ -6,7 +6,7 @@ declare global {
     type TextElementType = '_text'
     type ElementType = 'div' | 'button'
 
-    type Child = Element | TextElement | Stream<TextElement | Array<Element | TextElement>>
+    type Child = Collection | Element | TextElement | Stream<TextElement | Array<Element | TextElement>>
 
     type PlainPropsKeys = 'class' | 'id' | 'type'
     type PlainProps = Partial<Record<PlainPropsKeys, string>>
@@ -35,6 +35,20 @@ declare global {
       readonly key: Key;
     }
 
+    interface CollectionProps {
+      keys$: Stream<Key[]>
+    }
+
+    interface ChildrenMap {
+      [key: string]: Child,
+    }
+
+    interface Collection {
+      readonly type: 'collection',
+      readonly props: CollectionProps,
+      readonly childrenMap: ChildrenMap,
+    }
+
     interface IntrinsicElements {
       div: ElementProps,
       button: ElementProps;
@@ -46,6 +60,7 @@ declare global {
       td: ElementProps;
       a: ElementProps;
       span: ElementProps;
+      collection: CollectionProps;
     }
   }
 }

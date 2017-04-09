@@ -35,15 +35,33 @@ function createChild(child: Child): JSX.Element | JSX.TextElement | Stream<JSX.T
   return child
 }
 
-export function h(type: JSX.ElementType, _props?: JSX.ElementProps, ...children: Array<Child | _.RecursiveArray<Child>>): JSX.Element {
+function collection(type: 'collection', props: JSX.CollectionProps, ...children: Array<JSX.ChildrenMap>): JSX.Collection {
+  return {
+    type,
+    props,
+    childrenMap: children[0],
+  }
+}
+
+function element(type: JSX.ElementType, _props?: JSX.ElementProps, ...children: Array<Child | _.RecursiveArray<Child>>): JSX.Element {
   const props = _props || {}
-  // TODO: check there is no prop and prop$ together
+
   return {
     type,
     props,
     children: _.flattenDeep(children).map(createChild),
     key: props.key != null ? props.key : Math.random(),
   }
+}
+
+export function h(type: any, props: any, ...children: any[]) {
+  // TODO: check there is no prop and prop$ together
+
+  if (type === 'collection') {
+    return collection(type, props, ...children)
+  }
+
+  return element(type, props, ...children)
 }
 
 function error(err: Error) {
@@ -93,7 +111,6 @@ function watchAttribute(plainAttr: JSX.PlainPropsKeys, streamAttr: JSX.StreamPro
 
 
 function createNode(parent: Element, jsxChild: JSX.Child): () => Element | Text {
-
   // Stream<JSX.TextElement>
 
   if (jsxChild instanceof Stream) {
@@ -140,6 +157,56 @@ function createNode(parent: Element, jsxChild: JSX.Child): () => Element | Text 
   // VNodes
 
   const vnode = jsxChild
+
+  if (vnode.type === 'collection') {
+    interface CollectionItem {
+      key: JSX.Key,
+      node: Element | Text,
+    }
+    const create = (key: JSX.Key) => {
+      const childVNode = vnode.childrenMap[key]
+      if (!childVNode) {
+        throw new Error(`Wrong key: ${key}`)
+      }
+      return createNode(parent, childVNode)()
+    }
+    vnode.props.keys$
+      .fold<CollectionItem[] | undefined>((prev, keys) => {
+        if (prev === undefined) {
+          return keys.map(key => ({
+            key: key,
+            node: create(key),
+          }))
+        }
+
+        prev
+          .filter(e => !keys.includes(e.key))
+          .forEach(e => {
+            parent.removeChild(e.node)
+          })
+
+        return keys.map(key => {
+          const exists = prev.find(el => el.key === key)
+          return exists
+            ? exists
+            : { key: key, node: create(key) }
+        })
+
+      }, undefined)
+      .addListener({
+        error,
+      })
+    // mount({
+    //   state$: vnode.props.keys$,
+    //   firstMount() {
+
+    //   },
+    //   nextMounts() {
+
+    //   },
+    // })
+    return () => node
+  }
 
   // JSX.TextElement
 
