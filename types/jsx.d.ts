@@ -42,6 +42,9 @@ declare global {
       h1: ElementProps;
       table: ElementProps;
       tbody: ElementProps;
+      tr: ElementProps;
+      td: ElementProps;
+      a: ElementProps;
       span: ElementProps;
     }
   }
