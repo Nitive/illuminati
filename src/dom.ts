@@ -13,18 +13,22 @@ function createTextElement(text: string): JSX.TextElement {
   }
 }
 
-type Child = JSX.Element | string | Stream<string>
+export type Child = JSX.Element | string | number | Stream<string | number>
 
 function createChild(child: Child): JSX.Element | JSX.TextElement | Stream<JSX.TextElement | Array<JSX.Element | JSX.TextElement>> {
   if (typeof child === 'string') {
     return createTextElement(child)
   }
 
+  if (typeof child === 'number') {
+    return createTextElement(String(child))
+  }
+
   if (child instanceof Stream) {
     return child.map(textOrArray => {
       return Array.isArray(textOrArray)
         ? textOrArray
-        : createTextElement(textOrArray)
+        : createTextElement(String(textOrArray))
     })
   }
 
