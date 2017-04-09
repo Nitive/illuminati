@@ -16,4 +16,7 @@ tdd:
 start:
 	concurrently --raw 'make dev-server' 'make ts-check'
 
+watch-lib:
+	tsc --declaration --project . --watch --pretty --outDir ../js-framework-benchmark/cycle-my/src/lib
+
 .PHONY: dev-server ts-check test tdd start
