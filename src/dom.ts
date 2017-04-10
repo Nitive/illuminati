@@ -5,31 +5,23 @@ import * as _ from 'lodash'
 
 const JSXText: JSX.TextElementType = '_text'
 
-function createTextElement(text: string): JSX.TextElement {
+function createTextElement(text: string | number): JSX.TextElement {
   return {
     type: JSXText,
     text,
-    key: text,
+    key: String(text),
   }
 }
 
 export type Child = JSX.Element | string | number | Stream<string | number>
 
-function createChild(child: Child): JSX.Element | JSX.TextElement | Stream<JSX.TextElement | Array<JSX.Element | JSX.TextElement>> {
-  if (typeof child === 'string') {
+function createChild(child: Child): JSX.Element | JSX.TextElement | Stream<JSX.TextElement> {
+  if (typeof child === 'string' || typeof child === 'number') {
     return createTextElement(child)
   }
 
-  if (typeof child === 'number') {
-    return createTextElement(String(child))
-  }
-
   if (child instanceof Stream) {
-    return child.map(textOrArray => {
-      return Array.isArray(textOrArray)
-        ? textOrArray
-        : createTextElement(String(textOrArray))
-    })
+    return child.map(createTextElement)
   }
 
   return child
@@ -43,9 +35,7 @@ function collection(type: 'collection', props: JSX.CollectionProps, ...children:
   }
 }
 
-function element(type: JSX.ElementType, _props?: JSX.ElementProps, ...children: Array<Child | _.RecursiveArray<Child>>): JSX.Element {
-  const props = _props || {}
-
+function element(type: JSX.ElementType, props: JSX.ElementProps, ...children: Array<Child | _.RecursiveArray<Child>>): JSX.Element {
   return {
     type,
     props,
@@ -54,14 +44,14 @@ function element(type: JSX.ElementType, _props?: JSX.ElementProps, ...children: 
   }
 }
 
-export function h(type: any, props: any, ...children: any[]) {
+export function h(type: any, props?: any, ...children: any[]) {
   // TODO: check there is no prop and prop$ together
 
   if (type === 'collection') {
     return collection(type, props, ...children)
   }
 
-  return element(type, props, ...children)
+  return element(type, props || {}, ...children)
 }
 
 function error(err: Error) {
@@ -116,38 +106,13 @@ function createNode(parent: Element, jsxChild: JSX.Child): () => Element | Text 
   if (jsxChild instanceof Stream) {
     const vnode$ = jsxChild
     let node: Text
-    let prevArr: Array<{ key: JSX.Key, node: Element | Text }>
     mount({
       state$: vnode$,
       firstMount: vnode => {
-        if (Array.isArray(vnode)) {
-          prevArr = vnode.map(el => ({
-            key: el.key,
-            node: createNode(parent, el)(),
-          }))
-          return
-        }
-
         node = document.createTextNode(String(vnode.text))
         parent.appendChild(node)
       },
       nextMounts: vnode => {
-        if (Array.isArray(vnode)) {
-          prevArr
-            .filter(e => !vnode.map(el => el.key).includes(e.key))
-            .forEach(e => {
-              parent.removeChild(e.node)
-            })
-
-          prevArr = vnode.map(el => {
-            const exists = prevArr.find(e => e.key === el.key)
-            return exists
-              ? exists
-              : { key: el.key, node: createNode(parent, el)() }
-          })
-          return
-        }
-
         node.textContent = String(vnode.text)
       },
     })
@@ -171,6 +136,9 @@ function createNode(parent: Element, jsxChild: JSX.Child): () => Element | Text 
       return createNode(parent, childVNode)()
     }
     vnode.props.keys$
+      .compose(dropRepeats((a: JSX.Key[], b: JSX.Key[]) => {
+        return a.length === b.length && _.isEqual(a, b)
+      }))
       .fold<CollectionItem[] | undefined>((prev, keys) => {
         if (prev === undefined) {
           return keys.map(key => ({
@@ -196,15 +164,6 @@ function createNode(parent: Element, jsxChild: JSX.Child): () => Element | Text 
       .addListener({
         error,
       })
-    // mount({
-    //   state$: vnode.props.keys$,
-    //   firstMount() {
-
-    //   },
-    //   nextMounts() {
-
-    //   },
-    // })
     return () => node
   }
 

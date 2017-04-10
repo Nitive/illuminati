@@ -6,7 +6,7 @@ declare global {
     type TextElementType = '_text'
     type ElementType = 'div' | 'button'
 
-    type Child = Collection | Element | TextElement | Stream<TextElement | Array<Element | TextElement>>
+    type Child = Collection | Element | TextElement | Stream<TextElement>
 
     type PlainPropsKeys = 'class' | 'id' | 'type'
     type PlainProps = Partial<Record<PlainPropsKeys, string>>

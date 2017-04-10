@@ -67,7 +67,9 @@ export function App(sources: Sources): Sinks {
 
   const items = range
     .map(key => {
-      const data$ = state$.map(state => state.items.find(item => item.index === key)!)
+      const data$ = state$
+        .map(state => state.items)
+        .map(items => items.find(item => item.index === key)!)
       return (
         <div>
           array element with key: {key},
