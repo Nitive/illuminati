@@ -1,5 +1,5 @@
 {
-  "name": "cycle-best-pref-driver",
+  "name": "illuminati.js",
   "version": "0.1.0",
   "description": "",
   "main": "index.js",
@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Nitive/cycle-best-pref-driver.git"
+    "url": "git+https://github.com/Nitive/illuminati.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Nitive/cycle-best-pref-driver/issues"
+    "url": "https://github.com/Nitive/illuminati/issues"
   },
-  "homepage": "https://github.com/Nitive/cycle-best-pref-driver#readme",
+  "homepage": "https://github.com/Nitive/illuminati#readme",
   "devDependencies": {
     "@cycle/dom": "^16.0.0",
     "@cycle/run": "^3.0.0",
