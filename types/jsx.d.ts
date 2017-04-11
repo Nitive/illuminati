@@ -60,6 +60,9 @@ declare global {
       td: ElementProps;
       a: ElementProps;
       span: ElementProps;
+      ul: ElementProps;
+      li: ElementProps;
+
       collection: CollectionProps;
     }
   }
