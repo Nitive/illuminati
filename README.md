@@ -3,4 +3,4 @@ A fully declarative ultra high-performance dom library which use streams for eve
 
 ![illuminati eye](http://cdn.wallpapersafari.com/3/3/bU3SYK.jpg)
 
-See [examples](tree/master/examples)
+See [examples](examples)
