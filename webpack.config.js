@@ -4,6 +4,7 @@ const { HotModuleReplacementPlugin } = require('webpack')
 module.exports = {
   entry: {
     hello_world: './examples/hello_world/index.tsx',
+    counter: './examples/counter/index.tsx',
   },
   output: {
     path: path.join(__dirname, 'dist'),
