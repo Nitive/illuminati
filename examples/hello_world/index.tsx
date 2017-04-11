@@ -1,7 +1,7 @@
 import xs, { Stream } from 'xstream'
 import { run, Drivers, FantasyObservable } from '@cycle/run'
 
-import { h, makeDOMDriver, DOMSource } from '../../src/dom'
+import { h, makeDOMDriver, DOMSource } from '../../src/cycle'
 
 export interface Sources {
   DOM: DOMSource,
