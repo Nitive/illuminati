@@ -3,7 +3,7 @@ const { HotModuleReplacementPlugin } = require('webpack')
 
 module.exports = {
   entry: {
-    app: './src/index.ts',
+    hello_world: './examples/hello_world/index.tsx',
   },
   output: {
     path: path.join(__dirname, 'dist'),
