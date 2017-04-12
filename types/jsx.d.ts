@@ -24,15 +24,13 @@ declare global {
 
     interface TextElement {
       readonly type: TextElementType,
-      readonly text: string | number,
-      readonly key: Key;
+      readonly text: string,
     }
 
     interface Element {
       readonly type: ElementType,
       readonly props: ElementProps,
       readonly children: Child[],
-      readonly key: Key;
     }
 
     interface CollectionProps {

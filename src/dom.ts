@@ -7,8 +7,7 @@ const JSXText: JSX.TextElementType = '_text'
 function createTextElement(text: string | number): JSX.TextElement {
   return {
     type: JSXText,
-    text,
-    key: String(text),
+    text: String(text),
   }
 }
 
@@ -39,7 +38,6 @@ function element(type: JSX.ElementType, props: JSX.ElementProps, ...children: Ar
     type,
     props,
     children: _.flattenDeep(children).map(createChild),
-    key: props.key != null ? props.key : Math.random(),
   }
 }
 
