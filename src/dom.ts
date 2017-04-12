@@ -133,26 +133,24 @@ function createElementSubscriber<ParentType extends Element, VNode>(parent: Pare
   }
 }
 
-function nextFrame<T>(cb: () => T): Promise<T> {
-  return new Promise<T>(resolve => {
+function nextFrame(): Promise<void> {
+  return new Promise<void>(resolve => {
     requestAnimationFrame(() => {
-      resolve(cb())
+      resolve()
     })
   })
 }
 
-function createTextNode<ParentNode extends Element>(parent: ParentNode, vnode: JSX.TextElement) {
-  return nextFrame(() => {
-    const node = document.createTextNode(vnode.text)
-    parent.appendChild(node)
-    return node
-  })
+async function createTextNode<ParentNode extends Element>(parent: ParentNode, vnode: JSX.TextElement) {
+  await nextFrame()
+  const node = document.createTextNode(vnode.text)
+  parent.appendChild(node)
+  return node
 }
 
-function removeNode<ParentNode extends Element>(parent: ParentNode, node: Element | Text) {
-  return nextFrame(() => {
-    parent.removeChild(node)
-  })
+async function removeNode<ParentNode extends Element>(parent: ParentNode, node: Element | Text) {
+  await nextFrame()
+  parent.removeChild(node)
 }
 
 function createTextNodeFromStream<ParentNode extends Element>(parent: ParentNode, vnode$: Stream<JSX.TextElement>): RemoveNodeFn {
@@ -161,10 +159,9 @@ function createTextNodeFromStream<ParentNode extends Element>(parent: ParentNode
     mount(vnode, parent) {
       return createTextNode(parent, vnode)
     },
-    update(vnode, node) {
-      return nextFrame(() => {
-        node.textContent = vnode.text
-      })
+    async update(vnode, node) {
+      await nextFrame()
+      node.textContent = vnode.text
     },
     remove(node, parent) {
       return removeNode(parent, node)
