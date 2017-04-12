@@ -227,9 +227,11 @@ export function createNode(parent: Element, jsxChild: JSX.Child): RemoveNodeFn {
   // JSX.TextElement
 
   if (vnode.type === JSXText) {
-    const node = document.createTextNode(String(vnode.text))
-    parent.appendChild(node)
-    return () => node
+    const nodeP = createTextNode(parent, vnode)
+    return async function removeTextNode() {
+      const node = await nodeP
+      return removeNode(parent, node)
+    }
   }
 
 
