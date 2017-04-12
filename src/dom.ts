@@ -133,22 +133,25 @@ function createElementSubscriber<ParentType extends Element, VNode>(parent: Pare
   }
 }
 
-function createTextNode<ParentNode extends Element>(parent: ParentNode, vnode: JSX.TextElement) {
-  return new Promise<Text>(resolve => {
+function nextFrame<T>(cb: () => T): Promise<T> {
+  return new Promise<T>(resolve => {
     requestAnimationFrame(() => {
-      const node = document.createTextNode(vnode.text)
-      parent.appendChild(node)
-      resolve(node)
+      resolve(cb())
     })
   })
 }
 
+function createTextNode<ParentNode extends Element>(parent: ParentNode, vnode: JSX.TextElement) {
+  return nextFrame(() => {
+    const node = document.createTextNode(vnode.text)
+    parent.appendChild(node)
+    return node
+  })
+}
+
 function removeNode<ParentNode extends Element>(parent: ParentNode, node: Element | Text) {
-  return new Promise<void>(resolve => {
-    requestAnimationFrame(() => {
-      parent.removeChild(node)
-      resolve()
-    })
+  return nextFrame(() => {
+    parent.removeChild(node)
   })
 }
 
@@ -159,11 +162,8 @@ function createTextNodeFromStream<ParentNode extends Element>(parent: ParentNode
       return createTextNode(parent, vnode)
     },
     update(vnode, node) {
-      return new Promise<void>(resolve => {
-        requestAnimationFrame(() => {
-          node.textContent = vnode.text
-          resolve()
-        })
+      return nextFrame(() => {
+        node.textContent = vnode.text
       })
     },
     remove(node, parent) {
