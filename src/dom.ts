@@ -181,47 +181,7 @@ export function createNode(parent: Element, jsxChild: JSX.Child): RemoveNodeFn {
   const vnode = jsxChild
 
   if (vnode.type === 'collection') {
-    interface CollectionItem {
-      key: JSX.Key,
-      node: Element | Text,
-    }
-    const create = (key: JSX.Key) => {
-      const childVNode = vnode.childrenMap[key]
-      if (!childVNode) {
-        throw new Error(`Wrong key: ${key}`)
-      }
-      return createNode(parent, childVNode)()
-    }
-    vnode.props.keys$
-      .compose(dropRepeats((a: JSX.Key[], b: JSX.Key[]) => {
-        return a.length === b.length && _.isEqual(a, b)
-      }))
-      .fold<CollectionItem[] | undefined>((prev, keys) => {
-        if (prev === undefined) {
-          return keys.map(key => ({
-            key: key,
-            node: create(key),
-          }))
-        }
-
-        prev
-          .filter(e => !keys.includes(e.key))
-          .forEach(e => {
-            parent.removeChild(e.node)
-          })
-
-        return keys.map(key => {
-          const exists = prev.find(el => el.key === key)
-          return exists
-            ? exists
-            : { key: key, node: create(key) }
-        })
-
-      }, undefined)
-      .addListener({
-        error,
-      })
-    return () => node
+    return () => Promise.resolve()
   }
 
   // JSX.TextElement
