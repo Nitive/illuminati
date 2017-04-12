@@ -96,24 +96,63 @@ function watchAttribute(plainAttr: JSX.PlainPropsKeys, streamAttr: JSX.StreamPro
   })
 }
 
+export type RemoveNodeFn = () => Promise<void>
 
-export function createNode(parent: Element, jsxChild: JSX.Child): () => Element | Text {
+function createElementSubscriber<ParentType extends Element, VNode>(parent: ParentType, vnode$: Stream<VNode>) {
+  return function createElementWithHooks<NodeType>(hooks: {
+    mount: (vnode: VNode, parent: ParentType) => NodeType,
+    update: (vnode: VNode, node: NodeType, parent: ParentType) => void,
+    remove: (node: NodeType, parent: ParentType) => void,
+  }): RemoveNodeFn {
+    const first$ = vnode$.take(1)
+    const next$ = vnode$.drop(1)
+    const nodeP = new Promise<NodeType>((resolve, reject) => {
+      first$.addListener({
+        next(vnode) {
+          const node = hooks.mount(vnode, parent)
+
+          next$.addListener({
+            next(vnode) {
+              hooks.update(vnode, node, parent)
+            },
+            error: reject,
+          })
+          resolve(node)
+        },
+        error: reject,
+      })
+    })
+
+    return () => nodeP.then(node => {
+      first$.shamefullySendComplete()
+      next$.shamefullySendComplete()
+      hooks.remove(node, parent)
+    })
+  }
+}
+
+function createTextNodeFromStream<ParentNode extends Element>(parent: ParentNode, vnode$: Stream<JSX.TextElement>): RemoveNodeFn {
+  const createElementWithHooks = createElementSubscriber(parent, vnode$)
+  return createElementWithHooks<Text>({
+    mount(vnode, parent) {
+      const node = document.createTextNode(vnode.text)
+      parent.appendChild(node)
+      return node
+    },
+    update(vnode, node) {
+      node.textContent = vnode.text
+    },
+    remove(node, parent) {
+      parent.removeChild(node)
+    },
+  })
+}
+
+export function createNode(parent: Element, jsxChild: JSX.Child): RemoveNodeFn {
   // Stream<JSX.TextElement>
 
   if (jsxChild instanceof Stream) {
-    const vnode$ = jsxChild
-    let node: Text
-    mount({
-      state$: vnode$,
-      firstMount: vnode => {
-        node = document.createTextNode(String(vnode.text))
-        parent.appendChild(node)
-      },
-      nextMounts: vnode => {
-        node.textContent = String(vnode.text)
-      },
-    })
-    return () => node
+    return createTextNodeFromStream(parent, jsxChild)
   }
 
   // VNodes
