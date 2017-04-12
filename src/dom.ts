@@ -61,7 +61,8 @@ interface MountArgs<S> {
   firstMount: Update<S>,
   nextMounts: Update<S>,
 }
-function mount<S>({ state$, firstMount, nextMounts }: MountArgs<S>) {
+
+function watch<S>({ state$, firstMount, nextMounts }: MountArgs<S>) {
   state$
     .take(1)
     .addListener({
@@ -89,7 +90,7 @@ const setAttribute = (attributeName: string) => (node: Element) => (state: strin
 function watchAttribute(plainAttr: JSX.PlainPropsKeys, streamAttr: JSX.StreamPropsKeys, node: Element, props: JSX.ElementProps) {
   const setAttr = setAttribute(plainAttr)(node)
 
-  mount({
+  watch({
     state$: props[streamAttr] || (props[plainAttr] ? xs.of(props[plainAttr]) : xs.empty()),
     firstMount: setAttr,
     nextMounts: setAttr,
@@ -169,12 +170,62 @@ function createTextNodeFromStream<ParentNode extends Element>(parent: ParentNode
   })
 }
 
+function createElement(parent: Element, vnode: JSX.Element): RemoveNodeFn {
+  let node: Element | null
+  const { type, props, children } = vnode
+  async function add() {
+    await nextFrame()
+
+    node = document.createElement(type)
+    parent.appendChild(node)
+    watchAttribute('class', 'class$', node, props)
+    watchAttribute('id', 'id$', node, props)
+    watchAttribute('type', 'type$', node, props)
+
+    children.forEach(child => {
+      createNode(node!, child)
+    })
+  }
+
+  async function remove() {
+    if (!node) {
+      throw new Error('Trying to remove node when ')
+    }
+    await removeNode(parent, node)
+    node = null
+  }
+
+  const visible$ = props.if$ || xs.of(true)
+
+  watch({
+    state$: visible$,
+    firstMount(shouldBeVisible) {
+      if (shouldBeVisible) {
+        add()
+      }
+    },
+    nextMounts(shouldBeVisible) {
+      if (shouldBeVisible) {
+        add()
+      } else {
+        remove()
+      }
+    },
+  })
+
+  return async function removeElement() {
+    await remove()
+    visible$.shamefullySendComplete()
+  }
+}
+
 export function createNode(parent: Element, jsxChild: JSX.Child): RemoveNodeFn {
   // Stream<JSX.TextElement>
 
   if (jsxChild instanceof Stream) {
     return createTextNodeFromStream(parent, jsxChild)
   }
+
 
   // VNodes
 
@@ -194,46 +245,6 @@ export function createNode(parent: Element, jsxChild: JSX.Child): RemoveNodeFn {
     }
   }
 
-
   // JSX.Element
-
-  let node: Element
-  const { type, props, children } = vnode
-  function add() {
-    node = document.createElement(type)
-    parent.appendChild(node)
-    watchAttribute('class', 'class$', node, props)
-    watchAttribute('id', 'id$', node, props)
-    watchAttribute('type', 'type$', node, props)
-
-    children.forEach(child => {
-      createNode(node, child)
-    })
-  }
-
-  function remove() {
-    parent.removeChild(node)
-  }
-
-  mount({
-    state$: props.if$ || xs.of(true),
-    firstMount(state) {
-      if (state) {
-        add()
-      }
-    },
-
-    nextMounts(state) {
-      if (state) {
-        add()
-      } else {
-        remove()
-      }
-    },
-  })
-
-  return async function removeNode() {
-    await nextFrame()
-    remove()
-  }
+  return createElement(parent, vnode)
 }
