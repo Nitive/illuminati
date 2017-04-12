@@ -100,24 +100,25 @@ export type RemoveNodeFn = () => Promise<void>
 
 function createElementSubscriber<ParentType extends Element, VNode>(parent: ParentType, vnode$: Stream<VNode>) {
   return function createElementWithHooks<NodeType>(hooks: {
-    mount: (vnode: VNode, parent: ParentType) => NodeType,
+    mount: (vnode: VNode, parent: ParentType) => Promise<NodeType>,
     update: (vnode: VNode, node: NodeType, parent: ParentType) => void,
-    remove: (node: NodeType, parent: ParentType) => void,
+    remove: (node: NodeType, parent: ParentType) => Promise<void>,
   }): RemoveNodeFn {
     const first$ = vnode$.take(1)
     const next$ = vnode$.drop(1)
     const nodeP = new Promise<NodeType>((resolve, reject) => {
       first$.addListener({
         next(vnode) {
-          const node = hooks.mount(vnode, parent)
-
-          next$.addListener({
-            next(vnode) {
-              hooks.update(vnode, node, parent)
-            },
-            error: reject,
+          const nodeP = hooks.mount(vnode, parent)
+          nodeP.then(node => {
+            next$.addListener({
+              next(vnode) {
+                hooks.update(vnode, node, parent)
+              },
+              error: reject,
+            })
+            resolve(node)
           })
-          resolve(node)
         },
         error: reject,
       })
@@ -135,15 +136,27 @@ function createTextNodeFromStream<ParentNode extends Element>(parent: ParentNode
   const createElementWithHooks = createElementSubscriber(parent, vnode$)
   return createElementWithHooks<Text>({
     mount(vnode, parent) {
-      const node = document.createTextNode(vnode.text)
-      parent.appendChild(node)
-      return node
+      return new Promise(resolve => {
+        requestAnimationFrame(() => {
+          const node = document.createTextNode(vnode.text)
+          parent.appendChild(node)
+          resolve(node)
+        })
+      })
     },
     update(vnode, node) {
-      node.textContent = vnode.text
+      // TODO: validate that previous update was completed
+      requestAnimationFrame(() => {
+        node.textContent = vnode.text
+      })
     },
     remove(node, parent) {
-      parent.removeChild(node)
+      return new Promise<void>(resolve => {
+        requestAnimationFrame(() => {
+          parent.removeChild(node)
+          resolve()
+        })
+      })
     },
   })
 }
