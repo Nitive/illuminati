@@ -232,5 +232,8 @@ export function createNode(parent: Element, jsxChild: JSX.Child): RemoveNodeFn {
     },
   })
 
-  return () => node
+  return async function removeNode() {
+    await nextFrame()
+    remove()
+  }
 }
