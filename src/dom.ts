@@ -108,6 +108,7 @@ function createElementSubscriber<ParentType extends Element, State>(parent: Pare
     const stateHead$ = state$.take(1)
     const stateTail$ = state$.compose(dropRepeats()).drop(1)
 
+    // TODO: Rewrite in declarative manner. Can't do it at 3 AM :(
     const node$ = xs.create<NodeType>({
       start(listener) {
         let node: NodeType
