@@ -99,38 +99,57 @@ function watchAttribute(plainAttr: JSX.PlainPropsKeys, streamAttr: JSX.StreamPro
 
 export type RemoveNodeFn = () => Promise<void>
 
-function createElementSubscriber<ParentType extends Element, VNode>(parent: ParentType, vnode$: Stream<VNode>) {
+function createElementSubscriber<ParentType extends Element, State>(parent: ParentType, state$: Stream<State>) {
   return function createElementWithHooks<NodeType>(hooks: {
-    mount: (vnode: VNode, parent: ParentType) => Promise<NodeType>,
-    update: (vnode: VNode, node: NodeType, parent: ParentType) => Promise<void>,
+    mount: (state: State, parent: ParentType) => Promise<NodeType>,
+    update: (vnode: State, node: NodeType, parent: ParentType) => Promise<NodeType>,
     remove: (node: NodeType, parent: ParentType) => Promise<void>,
   }): RemoveNodeFn {
-    const first$ = vnode$.take(1)
-    const next$ = vnode$.drop(1)
-    const nodeP = new Promise<NodeType>((resolve, reject) => {
-      first$.addListener({
-        next(vnode) {
-          const nodeP = hooks.mount(vnode, parent)
-          nodeP.then(node => {
-            next$.addListener({
-              next(vnode) {
-                // TODO: validate that previous update was completed
-                hooks.update(vnode, node, parent)
+    const stateHead$ = state$.take(1)
+    const stateTail$ = state$.compose(dropRepeats()).drop(1)
+
+    const node$ = xs.create<NodeType>({
+      start(listener) {
+        let node: NodeType
+        stateHead$.addListener({
+          async next(state) {
+            node = await hooks.mount(state, parent)
+            listener.next(node)
+            stateTail$.addListener({
+              async next(state) {
+                // TODO: add update to stack and run consistently
+                // to prevent situation when second update applied before first
+                node = await hooks.update(state, node, parent)
+                listener.next(node)
               },
-              error: reject,
+              error(err) {
+                listener.error(err)
+              },
             })
-            resolve(node)
-          })
-        },
-        error: reject,
-      })
+          },
+          error(err) {
+            listener.error(err)
+          },
+        })
+      },
+      stop() {}, // tslint:disable-line:no-empty
     })
 
-    return () => nodeP.then(node => {
-      first$.shamefullySendComplete()
-      next$.shamefullySendComplete()
-      hooks.remove(node, parent)
-    })
+    node$.addListener({ error })
+
+    return async function removeElement() {
+      stateHead$.shamefullySendComplete()
+      stateTail$.shamefullySendComplete()
+      node$.last().addListener({
+        next(node) {
+          // in fact node can be already remove and NodeType contain undefined
+          if (node) {
+            hooks.remove(node, parent)
+          }
+        },
+        error,
+      })
+    }
   }
 }
 
@@ -142,9 +161,9 @@ function nextFrame(): Promise<void> {
   })
 }
 
-async function createTextNode<ParentNode extends Element>(parent: ParentNode, vnode: JSX.TextElement) {
+async function createTextNode<ParentNode extends Element>(parent: ParentNode, text: string) {
   await nextFrame()
-  const node = document.createTextNode(vnode.text)
+  const node = document.createTextNode(text)
   parent.appendChild(node)
   return node
 }
@@ -155,28 +174,28 @@ async function removeNode<ParentNode extends Element>(parent: ParentNode, node: 
 }
 
 function createTextNodeFromStream<ParentNode extends Element>(parent: ParentNode, vnode$: Stream<JSX.TextElement>): RemoveNodeFn {
-  const createElementWithHooks = createElementSubscriber(parent, vnode$)
+  const createElementWithHooks = createElementSubscriber(parent, vnode$.map(vnode => vnode.text))
   return createElementWithHooks<Text>({
-    mount(vnode, parent) {
-      return createTextNode(parent, vnode)
+    async mount(text, parent) {
+      return await createTextNode(parent, text)
     },
-    async update(vnode, node) {
+    async update(text, node) {
       await nextFrame()
-      node.textContent = vnode.text
+      node.textContent = text
+      return node
     },
-    remove(node, parent) {
-      return removeNode(parent, node)
+    async remove(node, parent) {
+      await removeNode(parent, node)
     },
   })
 }
 
 function createElement(parent: Element, vnode: JSX.Element): RemoveNodeFn {
-  let node: Element | null
   const { type, props, children } = vnode
-  async function add() {
+  async function add(parent: Element) {
     await nextFrame()
 
-    node = document.createElement(type)
+    const node = document.createElement(type)
     parent.appendChild(node)
     watchAttribute('class', 'class$', node, props)
     watchAttribute('id', 'id$', node, props)
@@ -185,38 +204,39 @@ function createElement(parent: Element, vnode: JSX.Element): RemoveNodeFn {
     children.forEach(child => {
       createNode(node!, child)
     })
+    return node
   }
 
-  async function remove() {
-    if (!node) {
-      throw new Error('Trying to remove node when ')
-    }
+  async function remove(node: Element, parent: Element) {
     await removeNode(parent, node)
-    node = null
   }
 
   const visible$ = props.if$ || xs.of(true)
+  const createElementWithHooks = createElementSubscriber(parent, visible$)
 
-  watch({
-    state$: visible$,
-    firstMount(shouldBeVisible) {
+  return createElementWithHooks<Element | void>({
+    async mount(shouldBeVisible, parent) {
       if (shouldBeVisible) {
-        add()
+        return await add(parent)
+      }
+      return
+    },
+    async update(shouldBeVisible, node, parent) {
+      if (shouldBeVisible) {
+        return await add(parent)
+      } else {
+        // node always exist because dropRepeats() guarantees previous state is false
+        // so we can use ! to remove undefined variant from type
+        await remove(node!, parent)
+        return
       }
     },
-    nextMounts(shouldBeVisible) {
-      if (shouldBeVisible) {
-        add()
-      } else {
-        remove()
+    async remove(node, parent) {
+      if (node) {
+        await remove(node, parent)
       }
     },
   })
-
-  return async function removeElement() {
-    await remove()
-    visible$.shamefullySendComplete()
-  }
 }
 
 export function createNode(parent: Element, jsxChild: JSX.Child): RemoveNodeFn {
@@ -238,10 +258,9 @@ export function createNode(parent: Element, jsxChild: JSX.Child): RemoveNodeFn {
   // JSX.TextElement
 
   if (vnode.type === JSXText) {
-    const nodeP = createTextNode(parent, vnode)
+    const nodeP = createTextNode(parent, vnode.text)
     return async function removeTextNode() {
-      const node = await nodeP
-      return removeNode(parent, node)
+      await removeNode(parent, await nodeP)
     }
   }
 
