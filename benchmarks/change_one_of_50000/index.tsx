@@ -3,6 +3,7 @@ import { run, Drivers, FantasyObservable } from '@cycle/run'
 import * as L from 'lodash'
 
 import { h, makeDOMDriver, DOMSource } from '../../src/cycle'
+import { cx } from '../../src/helpers'
 
 export interface Sources {
   DOM: DOMSource,
@@ -16,10 +17,6 @@ export interface Sinks {
 
 const drivers: Drivers<Sources, Sinks> = {
   DOM: makeDOMDriver('#app'),
-}
-
-function cx(...classes: Array<string | undefined | null>): string {
-  return classes.filter(Boolean).join(' ')
 }
 
 function main({ DOM }: Sources): Sinks {
