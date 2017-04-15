@@ -5,6 +5,17 @@ import { FantasyObservable } from '@cycle/run'
 
 import { Stream } from 'xstream'
 
+function wait(time: number = 0) {
+  return new Promise<void>(resolve => {
+    setTimeout(resolve, time)
+  })
+}
+
+export async function click(selector: string) {
+  (document.querySelector(selector) as HTMLElement).click()
+  await wait()
+}
+
 function toPromise<T>(stream: Stream<T>): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     stream
@@ -36,5 +47,6 @@ export async function run(main: (sinks: Sinks) => Sources) {
   app.setAttribute('id', 'app')
   document.body.appendChild(app)
   createNode(app, vtree)
+  await wait()
   return app
 }
