@@ -21,6 +21,7 @@
     "@cycle/run": "^3.0.0",
     "@cycle/time": "^0.7.3",
     "@types/jest": "^19.2.1",
+    "@types/lodash": "^4.14.61",
     "concurrently": "^3.4.0",
     "jest": "^19.0.2",
     "ts-jest": "^19.0.0",
@@ -29,8 +30,7 @@
     "tslint-config-standard": "^4.0.0",
     "typescript": "^2.2.1",
     "webpack": "^2.2.1",
-    "webpack-dev-server": "^2.4.1",
-    "xstream": "^10.3.0"
+    "webpack-dev-server": "^2.4.1"
   },
   "jest": {
     "transform": {
@@ -39,11 +39,12 @@
     "testResultsProcessor": "<rootDir>/node_modules/ts-jest/coverageprocessor.js",
     "testRegex": ".*test\\.(ts|js)$",
     "moduleFileExtensions": [
+      "tsx",
       "ts",
       "js"
     ]
   },
   "dependencies": {
-    "@types/lodash": "^4.14.61"
+    "xstream": "^10.3.0"
   }
 }
