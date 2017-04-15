@@ -36,7 +36,7 @@ interface Sources {
   [key: string]: FantasyObservable,
 }
 
-(window as any).requestAnimationFrame = function monkeyPatchedSyncRequestAnimationFrame(cb: () => void) {
+(window as any).requestAnimationFrame = function monkeyPatchedSync_requestAnimationFrame(cb: () => void) {
   cb()
 }
 
