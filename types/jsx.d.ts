@@ -8,9 +8,9 @@ declare global {
 
     type Child = Collection | Element | TextElement | Stream<TextElement>
 
-    type PlainPropsKeys = 'class' | 'id' | 'type'
+    type PlainPropsKeys = 'class' | 'id' | 'type' | 'href'
     type PlainProps = Partial<Record<PlainPropsKeys, string>>
-    type StreamPropsKeys = 'class$' | 'id$' | 'type$'
+    type StreamPropsKeys = 'class$' | 'id$' | 'type$' | 'href$'
     type StreamProps = Partial<Record<StreamPropsKeys, Stream<string>>>
 
     type SpecificProps = {
@@ -60,6 +60,7 @@ declare global {
       span: ElementProps;
       ul: ElementProps;
       li: ElementProps;
+      p: ElementProps;
 
       collection: CollectionProps;
     }
