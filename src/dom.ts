@@ -204,7 +204,7 @@ function createElement(parent: Element, vnode: JSX.Element): RemoveNodeFn {
     watchAttribute('type', 'type$', node, props)
 
     children.forEach(child => {
-      createNode(node!, child)
+      createNode(node, child)
     })
     return node
   }
