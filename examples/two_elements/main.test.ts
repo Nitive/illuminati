@@ -1,11 +1,16 @@
 import { main } from './main'
 import { run, click } from '../../src/test_helpers'
 
-describe('two_elements', () => {
+
+describe('two_elements', async() => {
   let content: HTMLDivElement
 
+  beforeAll(async() => {
+    const app = await run(main)
+    content = app.querySelector('.content') as HTMLDivElement
+  })
+
   it('should render two elements', async() => {
-    content = (await run(main)).querySelector('.content') as HTMLDivElement
     expect(content.innerHTML).toBe('<div>1. one</div><div>2. two</div>')
   })
 

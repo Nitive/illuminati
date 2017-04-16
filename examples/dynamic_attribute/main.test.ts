@@ -4,8 +4,11 @@ import { run, click } from '../../src/test_helpers'
 describe('dynamic_attribute', () => {
   let app: HTMLDivElement
 
-  it('should render Press Me button', async() => {
+  beforeAll(async() => {
     app = await run(main)
+  })
+
+  it('should render Press Me button', async() => {
     expect(app.innerHTML).toBe('<div class="container"><button class="pressme">Press Me</button></div>')
   })
 
