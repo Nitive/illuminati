@@ -79,7 +79,7 @@ function watch<S>({ state$, firstMount, nextMounts }: MountArgs<S>) {
     })
 }
 
-const setAttribute = (attributeName: string) => (node: Element) => (state: string) => {
+const setAttribute = (attributeName: string) => (node: HTMLElement) => (state: string) => {
   if (state) {
     node.setAttribute(attributeName, state)
   } else {
@@ -87,7 +87,7 @@ const setAttribute = (attributeName: string) => (node: Element) => (state: strin
   }
 }
 
-function watchAttribute(plainAttr: JSX.PlainPropsKeys, streamAttr: JSX.StreamPropsKeys, node: Element, props: JSX.ElementProps) {
+function watchAttribute(plainAttr: JSX.PlainPropsKeys, streamAttr: JSX.StreamPropsKeys, node: HTMLElement, props: JSX.ElementProps) {
   const setAttr = setAttribute(plainAttr)(node)
 
   watch({
@@ -99,7 +99,7 @@ function watchAttribute(plainAttr: JSX.PlainPropsKeys, streamAttr: JSX.StreamPro
 
 type RemoveNodeFn = () => Promise<void>
 
-function createElementSubscriber<ParentType extends Element, State>(parent: ParentType, state$: Stream<State>) {
+function createElementSubscriber<ParentType extends HTMLElement, State>(parent: ParentType, state$: Stream<State>) {
   return function createElementWithHooks<NodeType>(hooks: {
     mount: (state: State, parent: ParentType) => Promise<NodeType>,
     update: (vnode: State, node: NodeType, parent: ParentType) => Promise<NodeType>,
@@ -162,19 +162,26 @@ function nextFrame(): Promise<void> {
   })
 }
 
-async function createTextNode<ParentNode extends Element>(parent: ParentNode, text: string) {
+async function createTextNode<ParentNode extends HTMLElement>(parent: ParentNode, text: string) {
   await nextFrame()
   const node = document.createTextNode(text)
   parent.appendChild(node)
   return node
 }
 
-async function removeNode<ParentNode extends Element>(parent: ParentNode, node: Element | Text) {
+async function removeNode(node: HTMLElement | Text) {
   await nextFrame()
-  parent.removeChild(node)
+  if (node.remove) {
+    node.remove()
+  } else {
+    const parent = node.parentNode
+    if (parent) {
+      parent.removeChild(node)
+    }
+  }
 }
 
-function createTextNodeFromStream<ParentNode extends Element>(parent: ParentNode, vnode$: Stream<JSX.TextElement>): RemoveNodeFn {
+function createTextNodeFromStream<ParentNode extends HTMLElement>(parent: ParentNode, vnode$: Stream<JSX.TextElement>): RemoveNodeFn {
   const createElementWithHooks = createElementSubscriber(parent, vnode$.map(vnode => vnode.text))
   return createElementWithHooks<Text>({
     async mount(text, parent) {
@@ -185,15 +192,13 @@ function createTextNodeFromStream<ParentNode extends Element>(parent: ParentNode
       node.textContent = text
       return node
     },
-    async remove(node, parent) {
-      await removeNode(parent, node)
-    },
+    remove: removeNode,
   })
 }
 
-function createElement(parent: Element, vnode: JSX.Element): RemoveNodeFn {
+function createElement(parent: HTMLElement, vnode: JSX.Element): RemoveNodeFn {
   const { type, props, children } = vnode
-  async function add(parent: Element) {
+  async function add(parent: HTMLElement) {
     await nextFrame()
 
     const node = document.createElement(type)
@@ -209,14 +214,10 @@ function createElement(parent: Element, vnode: JSX.Element): RemoveNodeFn {
     return node
   }
 
-  async function remove(node: Element, parent: Element) {
-    await removeNode(parent, node)
-  }
-
   const visible$ = props.if$ || xs.of(true)
   const createElementWithHooks = createElementSubscriber(parent, visible$)
 
-  return createElementWithHooks<Element | void>({
+  return createElementWithHooks<HTMLElement | void>({
     async mount(shouldBeVisible, parent) {
       if (shouldBeVisible) {
         return await add(parent)
@@ -229,19 +230,19 @@ function createElement(parent: Element, vnode: JSX.Element): RemoveNodeFn {
       } else {
         // node always exist because dropRepeats() guarantees previous state is false
         // so we can use ! to remove undefined variant from type
-        await remove(node!, parent)
+        await removeNode(node!)
         return
       }
     },
-    async remove(node, parent) {
+    async remove(node) {
       if (node) {
-        await remove(node, parent)
+        await removeNode(node)
       }
     },
   })
 }
 
-export function createNode(parent: Element, jsxChild: JSX.Child): RemoveNodeFn {
+export function createNode(parent: HTMLElement, jsxChild: JSX.Child): RemoveNodeFn {
   // Stream<JSX.TextElement>
 
   if (jsxChild instanceof Stream) {
@@ -262,7 +263,8 @@ export function createNode(parent: Element, jsxChild: JSX.Child): RemoveNodeFn {
   if (vnode.type === JSXText) {
     const nodeP = createTextNode(parent, vnode.text)
     return async function removeTextNode() {
-      await removeNode(parent, await nodeP)
+      const node = await nodeP
+      await removeNode(node)
     }
   }
 
