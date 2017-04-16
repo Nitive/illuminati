@@ -199,6 +199,7 @@ function createElement(parent: Element, vnode: JSX.Element): RemoveNodeFn {
     const node = document.createElement(type)
     parent.appendChild(node)
     watchAttribute('class', 'class$', node, props)
+    watchAttribute('href', 'href$', node, props)
     watchAttribute('id', 'id$', node, props)
     watchAttribute('type', 'type$', node, props)
 

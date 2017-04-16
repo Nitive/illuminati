@@ -3,8 +3,12 @@ import { run, click } from '../../src/test_helpers'
 
 describe('counter', () => {
   let app: HTMLDivElement
-  it('should render div with count and inc & dec buttons', async() => {
+
+  beforeAll(async() => {
     app = await run(main)
+  })
+
+  it('should render div with count and inc & dec buttons', async() => {
     expect(app.innerHTML).toBe('<div><div>0</div><button class="dec">-</button><button class="inc">+</button></div>')
   })
 
