@@ -1,25 +1,19 @@
 import xs from 'xstream'
+import { h, select } from '../../src/'
 
-import { h } from '../../src/cycle'
-import { Sources, Sinks } from './'
-
-export function main({ DOM }: Sources): Sinks {
+export function main() {
   const count$ = xs
     .merge(
-      DOM.selectEvents('.inc', 'click').mapTo(+1),
-      DOM.selectEvents('.dec', 'click').mapTo(-1),
+      select('.inc').events('click').mapTo(+1),
+      select('.dec').events('click').mapTo(-1),
     )
     .fold((count, x) => count + x, 0)
 
-  const vtree = (
+  return (
     <div>
       <div>{count$}</div>
       <button class='dec'>-</button>
       <button class='inc'>+</button>
     </div>
   )
-
-  return {
-    DOM: xs.of(vtree),
-  }
 }

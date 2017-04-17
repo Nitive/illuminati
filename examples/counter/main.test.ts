@@ -5,7 +5,7 @@ describe('counter', () => {
   let app: HTMLDivElement
 
   beforeAll(async() => {
-    app = await run(main)
+    app = await run(main())
   })
 
   it('should render div with count and inc & dec buttons', async() => {

@@ -6,7 +6,7 @@ describe('two_elements', async() => {
   let content: HTMLDivElement
 
   beforeAll(async() => {
-    const app = await run(main)
+    const app = await run(main())
     content = app.querySelector('.content') as HTMLDivElement
   })
 
