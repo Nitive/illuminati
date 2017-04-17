@@ -1,13 +1,10 @@
-import xs from 'xstream'
+import { h, select } from '../../src/'
 
-import { h } from '../../src/cycle'
-import { Sources, Sinks } from './'
+export function main() {
+  const oneVisible$ = select('.one').events('click').fold(visible => !visible, true)
+  const twoVisible$ = select('.two').events('click').fold(visible => !visible, true)
 
-export function main({ DOM }: Sources): Sinks {
-  const oneVisible$ = DOM.selectEvents('.one', 'click').fold(visible => !visible, true)
-  const twoVisible$ = DOM.selectEvents('.two', 'click').fold(visible => !visible, true)
-
-  const vtree = (
+  return (
     <div>
       <p>
         Currently this example works incorrectly — element adds to end of list but should add to its place in vtree.
@@ -24,8 +21,4 @@ export function main({ DOM }: Sources): Sinks {
       </div>
     </div>
   )
-
-  return {
-    DOM: xs.of(vtree),
-  }
 }

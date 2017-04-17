@@ -5,7 +5,7 @@ describe('toggle_visibility', () => {
   let app: HTMLDivElement
 
   beforeAll(async() => {
-    app = await run(main)
+    app = await run(main())
   })
 
   it('should render button but not render content', async() => {

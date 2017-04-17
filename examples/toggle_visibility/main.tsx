@@ -1,20 +1,13 @@
-import xs from 'xstream'
+import { h, select } from '../../src/'
 
-import { h } from '../../src/cycle'
-import { Sources, Sinks } from './'
-
-export function main({ DOM }: Sources): Sinks {
-  const visible$ = DOM.selectEvents('.toggle', 'click')
+export function main() {
+  const visible$ = select('.toggle').events('click')
     .fold(visible => !visible, false)
 
-  const vtree = (
+  return (
     <div>
       <button class='toggle'>toggle</button>
       <div if$={visible$}>content</div>
     </div>
   )
-
-  return {
-    DOM: xs.of(vtree),
-  }
 }

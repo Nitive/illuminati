@@ -5,7 +5,7 @@ describe('dynamic_attribute', () => {
   let app: HTMLDivElement
 
   beforeAll(async() => {
-    app = await run(main)
+    app = await run(main())
   })
 
   it('should render Press Me button', async() => {

@@ -11,7 +11,7 @@ function createTextElement(text: string | number): JSX.TextElement {
   }
 }
 
-export type Child = JSX.Element | string | number | Stream<string | number>
+type Child = JSX.Element | string | number | Stream<string | number>
 
 function createChild(child: Child): JSX.Element | JSX.TextElement | Stream<JSX.TextElement> {
   if (typeof child === 'string' || typeof child === 'number') {
@@ -97,7 +97,7 @@ function watchAttribute(plainAttr: JSX.PlainPropsKeys, streamAttr: JSX.StreamPro
   })
 }
 
-export type RemoveNodeFn = () => Promise<void>
+type RemoveNodeFn = () => Promise<void>
 
 function createElementSubscriber<ParentType extends Element, State>(parent: ParentType, state$: Stream<State>) {
   return function createElementWithHooks<NodeType>(hooks: {
