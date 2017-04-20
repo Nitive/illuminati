@@ -1,5 +1,7 @@
-import { RecursiveArray, flattenDeep } from 'lodash'
+import { RecursiveArray } from 'lodash'
+import flattenDeep = require('lodash/flattenDeep')
 import fromEvent from 'xstream/extra/fromEvent'
+
 import { render } from './dom'
 
 type Falsy = undefined | null | 0 | '' | false

@@ -1,6 +1,8 @@
 import xs, { Stream } from 'xstream'
 import dropRepeats from 'xstream/extra/dropRepeats'
-import * as _ from 'lodash'
+import { RecursiveArray } from 'lodash'
+import last = require('lodash/last')
+import flattenDeep = require('lodash/flattenDeep')
 
 const JSXText: JSX.TextElementType = '_text'
 
@@ -33,11 +35,11 @@ function collection(type: 'collection', props: JSX.CollectionProps, ...children:
   }
 }
 
-function element(type: JSX.ElementType, props: JSX.ElementProps, ...children: Array<Child | _.RecursiveArray<Child>>): JSX.Element {
+function element(type: JSX.ElementType, props: JSX.ElementProps, ...children: Array<Child | RecursiveArray<Child>>): JSX.Element {
   return {
     type,
     props,
-    children: _.flattenDeep(children).map(createChild),
+    children: flattenDeep(children).map(createChild),
   }
 }
 
@@ -231,7 +233,7 @@ function createElement(insert: InsertFn, vnode: JSX.Element): NodeE {
           .filter(Boolean)
           .slice(0, index)
 
-        const prevNode = _.last(prevNodes)
+        const prevNode = last(prevNodes)
         if (prevNode) {
           node.insertBefore(n, prevNode.nextSibling)
           return
