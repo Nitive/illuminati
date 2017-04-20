@@ -210,7 +210,10 @@ function createElement(insert: InsertFn, vnode: JSX.Element): RemoveNodeFn {
     watchAttribute('type', 'type$', node, props)
 
     children.forEach(child => {
-      createNode(node, child)
+      function insert(n: HTMLElement) {
+        node.appendChild(n)
+      }
+      createNode(insert, child)
     })
     return node
   }
@@ -243,11 +246,7 @@ function createElement(insert: InsertFn, vnode: JSX.Element): RemoveNodeFn {
   })
 }
 
-export function createNode(parent: HTMLElement, jsxChild: JSX.Child): RemoveNodeFn {
-  function insert(node: HTMLElement) {
-    parent.appendChild(node)
-  }
-
+function createNode(insert: InsertFn, jsxChild: JSX.Child): RemoveNodeFn {
   // Stream<JSX.TextElement>
 
   if (jsxChild instanceof Stream) {
@@ -275,4 +274,12 @@ export function createNode(parent: HTMLElement, jsxChild: JSX.Child): RemoveNode
 
   // JSX.Element
   return createElement(insert, vnode)
+}
+
+export function render(vtree: JSX.Child, root: HTMLElement) {
+  function insert(node: HTMLElement) {
+    root.appendChild(node)
+  }
+
+  createNode(insert, vtree)
 }

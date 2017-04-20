@@ -1,4 +1,4 @@
-import { createNode } from './dom'
+import { render } from './dom'
 
 function wait(time: number = 0) {
   return new Promise<void>(resolve => {
@@ -19,7 +19,7 @@ export async function run(vtree: JSX.Element) {
   const app = document.createElement('div')
   app.setAttribute('id', 'app')
   document.body.appendChild(app)
-  createNode(app, vtree)
+  render(vtree, app)
   await wait()
   return app
 }
