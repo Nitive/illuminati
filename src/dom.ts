@@ -97,15 +97,28 @@ function watchAttribute(plainAttr: JSX.PlainPropsKeys, streamAttr: JSX.StreamPro
   })
 }
 
-type RemoveNodeFn = () => Promise<void>
+type NodeE = {
+  nodeP: Promise<HTMLElement | Text | void>,
+  remove: () => Promise<void>,
+}
+
 type InsertFn = <N extends HTMLElement | Text>(node: N) => void
 
+function toPromise<S>(stream: Stream<S>): Promise<S> {
+  return new Promise<S>((resolve, reject) => {
+    stream.last() .addListener({
+      next: resolve,
+      error: reject,
+    })
+  })
+}
+
 function createElementSubscriber<State>(insert: InsertFn, state$: Stream<State>) {
-  return function createElementWithHooks<NodeType>(hooks: {
+  return function createElementWithHooks<NodeType extends HTMLElement | Text | void>(hooks: {
     mount: (state: State, insert: InsertFn) => Promise<NodeType>,
     update: (vnode: State, node: NodeType, insert: InsertFn) => Promise<NodeType>,
     remove: (node: NodeType, insert: InsertFn) => Promise<void>,
-  }): RemoveNodeFn {
+  }): NodeE {
     const stateHead$ = state$.take(1)
     const stateTail$ = state$.compose(dropRepeats()).drop(1)
 
@@ -139,18 +152,14 @@ function createElementSubscriber<State>(insert: InsertFn, state$: Stream<State>)
 
     node$.addListener({ error })
 
-    return async function removeElement() {
-      stateHead$.shamefullySendComplete()
-      stateTail$.shamefullySendComplete()
-      node$.last().addListener({
-        next(node) {
-          // in fact node can be already removed (by if$) and NodeType contain undefined
-          if (node) {
-            hooks.remove(node, insert)
-          }
-        },
-        error,
-      })
+    const nodeP = toPromise(node$)
+    return {
+      nodeP,
+      async remove() {
+        stateHead$.shamefullySendComplete()
+        stateTail$.shamefullySendComplete()
+        removeNode(await nodeP as any)
+      },
     }
   }
 }
@@ -182,7 +191,7 @@ async function removeNode(node: HTMLElement | Text) {
   }
 }
 
-function createTextNodeFromStream(insert: InsertFn, vnode$: Stream<JSX.TextElement>): RemoveNodeFn {
+function createTextNodeFromStream(insert: InsertFn, vnode$: Stream<JSX.TextElement>): NodeE {
   const createElementWithHooks = createElementSubscriber(insert, vnode$.map(vnode => vnode.text))
   return createElementWithHooks<Text>({
     async mount(text, insert) {
@@ -197,7 +206,7 @@ function createTextNodeFromStream(insert: InsertFn, vnode$: Stream<JSX.TextEleme
   })
 }
 
-function createElement(insert: InsertFn, vnode: JSX.Element): RemoveNodeFn {
+function createElement(insert: InsertFn, vnode: JSX.Element): NodeE {
   const { type, props, children } = vnode
   async function add(insert: InsertFn) {
     await nextFrame()
@@ -246,7 +255,7 @@ function createElement(insert: InsertFn, vnode: JSX.Element): RemoveNodeFn {
   })
 }
 
-function createNode(insert: InsertFn, jsxChild: JSX.Child): RemoveNodeFn {
+function createNode(insert: InsertFn, jsxChild: JSX.Child): NodeE {
   // Stream<JSX.TextElement>
 
   if (jsxChild instanceof Stream) {
@@ -259,16 +268,16 @@ function createNode(insert: InsertFn, jsxChild: JSX.Child): RemoveNodeFn {
   const vnode = jsxChild
 
   if (vnode.type === 'collection') {
-    return () => Promise.resolve()
+    throw new Error('Dynamic collections are not implemented yet')
   }
 
   // JSX.TextElement
 
   if (vnode.type === JSXText) {
     const nodeP = createTextNode(insert, vnode.text)
-    return async function removeTextNode() {
-      const node = await nodeP
-      await removeNode(node)
+    return {
+      nodeP,
+      remove: () => nodeP.then(removeNode),
     }
   }
 
