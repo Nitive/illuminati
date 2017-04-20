@@ -1,6 +1,8 @@
-import { RecursiveArray, flattenDeep } from 'lodash'
+import { RecursiveArray } from 'lodash'
+import flattenDeep = require('lodash/flattenDeep')
 import fromEvent from 'xstream/extra/fromEvent'
-import { createNode } from './dom'
+
+import { render } from './dom'
 
 type Falsy = undefined | null | 0 | '' | false
 
@@ -25,5 +27,5 @@ export function attach(selector: string, vtree: JSX.Element) {
   }
 
   root.innerHTML = ''
-  createNode(root, vtree)
+  render(vtree, root)
 }
