@@ -144,7 +144,7 @@ function createElementSubscriber<State>(insert: InsertFn, state$: Stream<State>)
       stateTail$.shamefullySendComplete()
       node$.last().addListener({
         next(node) {
-          // in fact node can be already remove and NodeType contain undefined
+          // in fact node can be already removed (by if$) and NodeType contain undefined
           if (node) {
             hooks.remove(node, insert)
           }
