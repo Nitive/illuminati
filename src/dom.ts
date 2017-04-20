@@ -152,7 +152,7 @@ function createElementSubscriber<State>(insert: InsertFn, state$: Stream<State>)
 
     node$.addListener({ error })
 
-    const nodeP = toPromise(node$)
+    const nodeP = toPromise(node$.take(1))
     return {
       nodeP,
       async remove() {
@@ -218,11 +218,31 @@ function createElement(insert: InsertFn, vnode: JSX.Element): NodeE {
     watchAttribute('id', 'id$', node, props)
     watchAttribute('type', 'type$', node, props)
 
-    children.forEach(child => {
+    const childrenNodes: Array<HTMLElement | Text | void> = []
+
+    children.forEach((child, index) => {
       function insert(n: HTMLElement) {
-        node.appendChild(n)
+        if (index >= childrenNodes.length) {
+          node.appendChild(n)
+          return
+        }
+
+        const prevNodes = childrenNodes
+          .filter(Boolean)
+          .slice(0, index)
+
+        const prevNode = _.last(prevNodes)
+        if (prevNode) {
+          node.insertBefore(n, prevNode.nextSibling)
+          return
+        }
+
+        node.insertBefore(n, node.firstChild)
       }
-      createNode(insert, child)
+
+      createNode(insert, child).nodeP.then(node => {
+        childrenNodes[index] = node
+      })
     })
     return node
   }
