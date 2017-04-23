@@ -19,6 +19,10 @@ export function select(selector: string) {
   }
 }
 
+export function click(selector: string) {
+  return select(selector).events('click')
+}
+
 export function attach(selector: string, vtree: JSX.Element) {
   const root = document.querySelector(selector) as HTMLElement | null
 
