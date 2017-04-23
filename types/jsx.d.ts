@@ -6,7 +6,7 @@ declare global {
     type TextElementType = '_text'
     type ElementType = 'div' | 'button'
 
-    type Child = Collection | Element | TextElement | Stream<TextElement>
+    type Child = Collection<any> | Element | TextElement | Stream<TextElement>
 
     type PlainPropsKeys = 'class' | 'id' | 'type' | 'href'
     type PlainProps = Partial<Record<PlainPropsKeys, string>>
@@ -34,17 +34,17 @@ declare global {
     }
 
     interface CollectionProps {
-      keys$: Stream<Key[]>
+      items$: Stream<any[]>
+      trackBy: (item: any) => Key;
     }
 
-    interface ChildrenMap {
-      [key: string]: Child,
-    }
+    type CollectionItemGetter<Item> = (item$: Stream<Item>) => Child
 
-    interface Collection {
+    interface Collection<Item> {
       readonly type: 'collection',
-      readonly props: CollectionProps,
-      readonly childrenMap: ChildrenMap,
+      readonly items$: Stream<Item[]>
+      readonly trackBy: (item: Item) => Key;
+      readonly getItem: CollectionItemGetter<Item>;
     }
 
     interface IntrinsicElements {

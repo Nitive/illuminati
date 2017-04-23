@@ -27,11 +27,12 @@ function createChild(child: Child): JSX.Element | JSX.TextElement | Stream<JSX.T
   return child
 }
 
-function collection(type: 'collection', props: JSX.CollectionProps, ...children: Array<JSX.ChildrenMap>): JSX.Collection {
+function collection<T>(type: 'collection', props: JSX.CollectionProps, ...children: Array<JSX.CollectionItemGetter<T>>): JSX.Collection<T> {
   return {
     type,
-    props,
-    childrenMap: children[0],
+    items$: props.items$,
+    trackBy: props.trackBy,
+    getItem: children[0],
   }
 }
 
