@@ -1,8 +1,8 @@
-import { h, select } from '../../src/'
+import { h, click } from '../../src/'
 
 export function main() {
-  const oneVisible$ = select('.one').events('click').fold(visible => !visible, true)
-  const twoVisible$ = select('.two').events('click').fold(visible => !visible, true)
+  const oneVisible$ = click('.one').fold(visible => !visible, true)
+  const twoVisible$ = click('.two').fold(visible => !visible, true)
 
   return (
     <div>

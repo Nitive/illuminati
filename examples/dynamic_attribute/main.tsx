@@ -1,7 +1,7 @@
-import { h, cx, select } from '../../src/'
+import { h, cx, click } from '../../src/'
 
 export function main() {
-  const buttonClick$ = select('.pressme').events('click')
+  const buttonClick$ = click('.pressme')
 
   const containerClass$ = buttonClick$
     .fold(state => !state, false)

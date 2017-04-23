@@ -1,10 +1,10 @@
 import { Stream } from 'xstream'
 import range = require('lodash/range')
 
-import { h, cx, select } from '../../src/'
+import { h, cx, click } from '../../src/'
 
 export function main() {
-  const selected$: Stream<string> = select('.item').events('click').map(event => event.target.id)
+  const selected$: Stream<string> = click('.item').map(event => event.target.id)
 
   const list = range(50000)
     .map(index => {
