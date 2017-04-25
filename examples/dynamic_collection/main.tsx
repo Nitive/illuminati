@@ -15,8 +15,8 @@ const one: Item[] = [
 ]
 
 const two: Item[] = [
-  { text: '2' },
   { text: '3' },
+  { text: '2' },
 ]
 
 function getRandomItems(): Item[] {
