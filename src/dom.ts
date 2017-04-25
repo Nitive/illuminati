@@ -3,6 +3,8 @@ import dropRepeats from 'xstream/extra/dropRepeats'
 import { RecursiveArray } from 'lodash'
 import last = require('lodash/last')
 import flattenDeep = require('lodash/flattenDeep')
+import flatten = require('lodash/flatten')
+import difference = require('lodash/difference')
 
 const JSXText: JSX.TextElementType = '_text'
 
@@ -101,7 +103,7 @@ function watchAttribute(plainAttr: JSX.PlainPropsKeys, streamAttr: JSX.StreamPro
 }
 
 type NodeE = {
-  nodeP: Promise<HTMLElement | Text | void>,
+  nodesP: Promise<Array<HTMLElement | Text | void>>,
   remove: () => Promise<void>,
 }
 
@@ -157,7 +159,7 @@ function createElementSubscriber<State>(insert: InsertFn, state$: Stream<State>)
 
     const nodeP = toPromise(node$.take(1))
     return {
-      nodeP,
+      nodesP: nodeP.then(node => [node]),
       async remove() {
         stateHead$.shamefullySendComplete()
         stateTail$.shamefullySendComplete()
@@ -221,7 +223,7 @@ function createElement(insert: InsertFn, vnode: JSX.Element): NodeE {
     watchAttribute('id', 'id$', node, props)
     watchAttribute('type', 'type$', node, props)
 
-    const childrenNodes: Array<HTMLElement | Text | void> = []
+    const childrenNodes: Array<Array<HTMLElement | Text | void>> = []
 
     children.forEach((child, index) => {
       function insert(n: HTMLElement) {
@@ -234,7 +236,7 @@ function createElement(insert: InsertFn, vnode: JSX.Element): NodeE {
           .filter(Boolean)
           .slice(0, index)
 
-        const prevNode = last(prevNodes)
+        const prevNode = last(flatten(prevNodes))
         if (prevNode) {
           node.insertBefore(n, prevNode.nextSibling)
           return
@@ -243,8 +245,8 @@ function createElement(insert: InsertFn, vnode: JSX.Element): NodeE {
         node.insertBefore(n, node.firstChild)
       }
 
-      createNode(insert, child).nodeP.then(node => {
-        childrenNodes[index] = node
+      createNode(insert, child).nodesP.then(nodes => {
+        childrenNodes[index] = nodes
       })
     })
     return node
@@ -291,7 +293,49 @@ function createNode(insert: InsertFn, jsxChild: JSX.Child): NodeE {
   const vnode = jsxChild
 
   if (vnode.type === 'collection') {
-    throw new Error('Dynamic collections are not implemented yet')
+    const itemsMap: { [key: string]: NodeE } = {}
+
+    const getKey = vnode.trackBy
+    const getItem = vnode.getItem
+    const createItem = (item: any) => {
+      const key = getKey(item)
+
+      if (!itemsMap[key]) {
+        // TODO: create item$ stream
+        itemsMap[key] = createNode(insert, getItem(xs.of(item)))
+      }
+
+      return itemsMap[key]
+    }
+
+    vnode.items$.addListener({
+      next(items) {
+        // TODO: use Levenshtein algorithm
+        const newItemsMap = items.reduce((acc, x) => {
+          return { ...acc, [getKey(x)]: x }
+        }, {})
+
+        const itemsKeys = Object.keys(itemsMap)
+        const newItemsKeys = Object.keys(newItemsMap)
+        const itemsToAdd = difference(newItemsKeys, itemsKeys)
+        const itemsToRemove = difference(itemsKeys, newItemsKeys)
+
+        itemsToRemove.forEach(key => {
+          itemsMap[key].remove()
+          delete itemsMap[key]
+        })
+        itemsToAdd.forEach(key => {
+          createItem(newItemsMap[key])
+        })
+      },
+      error,
+    })
+    return {
+      nodesP: Promise.resolve([]),
+      async remove() {
+        // TODO: remove all nodes
+      },
+    }
   }
 
   // JSX.TextElement
@@ -299,7 +343,7 @@ function createNode(insert: InsertFn, jsxChild: JSX.Child): NodeE {
   if (vnode.type === JSXText) {
     const nodeP = createTextNode(insert, vnode.text)
     return {
-      nodeP,
+      nodesP: nodeP.then(node => [node]),
       remove: () => nodeP.then(removeNode),
     }
   }
