@@ -1,8 +1,7 @@
-import { h, select } from '../../src/'
+import { h, click } from '../../src/'
 
 export function main() {
-  const visible$ = select('.toggle').events('click')
-    .fold(visible => !visible, false)
+  const visible$ = click('.toggle').fold(visible => !visible, false)
 
   return (
     <div>

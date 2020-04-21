@@ -9,6 +9,7 @@ module.exports = {
     dynamic_attribute: './examples/dynamic_attribute/index.tsx',
     toggle_visibility: './examples/toggle_visibility/index.tsx',
     two_elements: './examples/two_elements/index.tsx',
+    dynamic_collection: './examples/dynamic_collection/index.tsx',
 
     // benchmarks
     change_one_of_50000: './benchmarks/change_one_of_50000/index.tsx',
